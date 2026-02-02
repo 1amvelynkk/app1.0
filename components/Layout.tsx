@@ -18,19 +18,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, onTabChang
       </main>
 
       {!hideBottomNav && (
-        <div className="bg-white border-t border-gray-100 safe-bottom z-50 absolute bottom-0 w-full shadow-[0_-5px_20px_rgba(0,0,0,0.03)] pb-2">
-          <div className="flex justify-between items-center h-[65px] px-2 relative">
+        <div className="bg-white border-t border-gray-100 safe-bottom z-50 absolute bottom-0 w-full shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+          <div className="flex justify-between items-center h-[58px] px-2 relative">
 
             {/* Left Items */}
             <div className="flex-1 flex justify-around">
               <NavItem
-                icon={<LayoutGrid size={24} />}
+                icon={<LayoutGrid size={22} />}
                 label="工作台"
                 isActive={currentTab === Tab.Workspace}
                 onClick={() => onTabChange(Tab.Workspace)}
               />
               <NavItem
-                icon={<Building2 size={24} />}
+                icon={<Building2 size={22} />}
                 label="组织"
                 isActive={currentTab === Tab.Organization}
                 onClick={() => onTabChange(Tab.Organization)}
@@ -38,23 +38,23 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, onTabChang
             </div>
 
             {/* Center AI Button - Popped Up */}
-            <div className="relative w-16 flex flex-col items-center justify-end z-10 -top-5" onClick={() => onTabChange(Tab.AI)}>
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg mb-1 ${currentTab === Tab.AI ? 'bg-[#2C097F] shadow-[#2C097F]/40 scale-110 ring-4 ring-white' : 'bg-white border border-gray-100 text-[#2C097F]'}`}>
-                <Bot size={28} className={currentTab === Tab.AI ? "text-white" : "text-[#2C097F]"} strokeWidth={2} />
+            <div className="relative w-14 flex flex-col items-center justify-end z-10 -top-4" onClick={() => onTabChange(Tab.AI)}>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg mb-0.5 ${currentTab === Tab.AI ? 'bg-[#2C097F] shadow-[#2C097F]/40 scale-110 ring-4 ring-white' : 'bg-white border border-gray-100 text-[#2C097F]'}`}>
+                <Bot size={24} className={currentTab === Tab.AI ? "text-white" : "text-[#2C097F]"} strokeWidth={2} />
               </div>
-              <span className={`text-[10px] font-bold ${currentTab === Tab.AI ? 'text-[#2C097F]' : 'text-gray-400'}`}>AI助手</span>
+              <span className={`text-[9px] font-bold ${currentTab === Tab.AI ? 'text-[#2C097F]' : 'text-gray-400'}`}>AI助手</span>
             </div>
 
             {/* Right Items */}
             <div className="flex-1 flex justify-around">
               <NavItem
-                icon={<ClipboardList size={24} />}
+                icon={<ClipboardList size={22} />}
                 label="项目"
                 isActive={currentTab === Tab.Project}
                 onClick={() => onTabChange(Tab.Project)}
               />
               <NavItem
-                icon={<User size={24} />}
+                icon={<User size={22} />}
                 label="我的"
                 isActive={currentTab === Tab.My}
                 onClick={() => onTabChange(Tab.My)}

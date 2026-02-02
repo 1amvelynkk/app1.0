@@ -76,15 +76,22 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   };
 
   const filteredProjects = projects.filter(p => {
+    // Current user identification
+    const isMyProject = p.manager === "王可欣" || p.manager_id === 'kexin';
+    const isParticipant = p.role === 'participant' || p.members?.some((m: any) => m.id === 'kexin' || m.name === '王可欣');
+
+    // "All" filter should truly show ALL company projects
+    if (activeFilter === 'all') return true;
+
     // Completed filter: show only 100% progress projects
     if (activeFilter === 'completed') return p.progress === 100;
-    // Other filters: exclude completed projects (show only active)
-    const isActive = p.progress < 100;
-    if (activeFilter === 'followed') return isActive && followedProjects.has(p.id);
-    if (activeFilter === 'my') return isActive && p.manager === "王可欣";
-    if (activeFilter === 'participated') return isActive && p.role === 'participant';
-    // 'all' filter: show only active projects
-    return isActive;
+
+    // Other specific filters
+    if (activeFilter === 'followed') return followedProjects.has(p.id);
+    if (activeFilter === 'my') return isMyProject;
+    if (activeFilter === 'participated') return isParticipant;
+
+    return true;
   });
 
   return (
@@ -101,40 +108,40 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 flex flex-col items-center pt-12 pb-0">
-        <h1 className="text-xl font-bold text-slate-900 mb-4">项目监控</h1>
+      {/* Header - Compressed */}
+      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 flex flex-col items-center pt-10 pb-0">
+        <h1 className="text-lg font-bold text-slate-900 mb-2">项目监控</h1>
         {/* Sub-header Banner */}
-        <div className="w-full bg-[#A78BFA] py-1.5 flex justify-center items-center shadow-inner">
-          <span className="text-white text-xs font-bold tracking-widest uppercase flex items-center gap-2">
-            <Layout size={12} className="fill-white/20 stroke-white" />
+        <div className="w-full bg-[#A78BFA] py-1 flex justify-center items-center shadow-inner">
+          <span className="text-white text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5">
+            <Layout size={10} className="fill-white/20 stroke-white" />
             项目监控看板
           </span>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-2.5 p-3">
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[80px]">
-          <span className="text-[11px] font-bold text-slate-500">总项目</span>
-          <span className="text-2xl font-bold text-slate-900">{projects.length}</span>
+      {/* Stats Cards - Compressed */}
+      <div className="grid grid-cols-3 gap-2 p-3">
+        <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-[65px]">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">总项目</span>
+          <span className="text-xl font-bold text-slate-900 leading-none">{projects.length}</span>
         </div>
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[80px]">
-          <span className="text-[11px] font-bold text-[#2C097F]">进行中</span>
-          <span className="text-2xl font-bold text-[#2C097F]">{projects.filter(p => p.hasPermission && p.progress < 100).length}</span>
+        <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-[65px]">
+          <span className="text-[10px] font-bold text-[#2C097F] uppercase tracking-tighter">进行中</span>
+          <span className="text-xl font-bold text-[#2C097F] leading-none">{projects.filter(p => p.hasPermission && p.progress < 100).length}</span>
         </div>
-        <div className="bg-red-50 p-3 rounded-2xl border border-red-100 shadow-sm flex flex-col justify-between h-[80px]">
-          <span className="text-[11px] font-bold text-red-600">已延期</span>
+        <div className="bg-red-50 p-2.5 rounded-xl border border-red-100 shadow-sm flex flex-col justify-between h-[65px]">
+          <span className="text-[10px] font-bold text-red-600 uppercase tracking-tighter">已延期</span>
           <div className="flex justify-between items-end">
-            <span className="text-2xl font-bold text-red-600">{projects.filter(p => p.status === 'delayed').length}</span>
-            <AlertCircle size={18} className="text-red-500 mb-1" />
+            <span className="text-xl font-bold text-red-600 leading-none">{projects.filter(p => p.status === 'delayed').length}</span>
+            <AlertCircle size={14} className="text-red-500" />
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="px-4 flex items-center gap-4 mb-4">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest shrink-0">筛选</span>
+      {/* Filters - Compressed */}
+      <div className="px-4 flex items-center gap-3 mb-3">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">筛选</span>
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
           <FilterButton label="全部" active={activeFilter === 'all'} onClick={() => { setActiveFilter('all'); onFilterChange?.('all'); }} />
           <FilterButton label="已完成" active={activeFilter === 'completed'} onClick={() => { setActiveFilter('completed'); onFilterChange?.('completed'); }} completed />
@@ -144,13 +151,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         </div>
       </div>
 
-      {/* Active Projects List */}
-      <div className="px-4 pb-32 flex-1 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-slate-900">
+      {/* Active Projects List - Compressed */}
+      <div className="px-3 pb-32 flex-1 overflow-y-auto">
+        <div className="flex justify-between items-center mb-2.5">
+          <h2 className="text-sm font-bold text-slate-900">
             {activeFilter === 'followed' ? '我的关注' : activeFilter === 'participated' ? '我参与的项目' : activeFilter === 'my' ? '我负责的项目' : '活跃项目'}
           </h2>
-          <span className="text-[#2C097F] text-xs font-bold bg-[#2C097F]/5 px-2 py-1 rounded-lg">共 {filteredProjects.length} 个</span>
+          <span className="text-[#2C097F] text-[10px] font-bold bg-[#2C097F]/5 px-2 py-0.5 rounded-lg">共 {filteredProjects.length} 个</span>
         </div>
 
         {filteredProjects.length === 0 ? (
@@ -161,7 +168,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
             <p className="text-sm font-medium">暂无项目</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredProjects.map(p => {
               // Unified Access Logic - check if current user is manager, member, or has role
               const isManager = p.manager === "王可欣" || p.manager_id === 'kexin';
@@ -202,8 +209,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 const FilterButton = ({ label, active, onClick, completed }: { label: string, active: boolean, onClick: () => void, completed?: boolean }) => (
   <button
     onClick={onClick}
-    className={`h-9 px-5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${active
-      ? 'bg-[#2C097F] text-white shadow-lg shadow-[#2C097F]/20 font-bold scale-105'
+    className={`h-8 px-3.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-all ${active
+      ? 'bg-[#2C097F] text-white shadow-lg shadow-[#2C097F]/20 scale-105'
       : 'bg-white border border-slate-200 text-slate-600'
       }`}
   >
@@ -224,25 +231,25 @@ const ProjectCard = ({ title, manager, progress, status, deadline, onClick, onFo
   const titleClass = isLocked ? "text-slate-500" : "text-slate-900";
 
   return (
-    <div onClick={onClick} className={`${containerClass} p-5 rounded-3xl shadow-sm border active:scale-98 transition-all relative overflow-hidden group`}>
+    <div onClick={onClick} className={`${containerClass} p-4 rounded-2xl shadow-sm border active:scale-98 transition-all relative overflow-hidden group`}>
       {/* Locked Overlay Icon */}
       {isLocked && (
-        <div className="absolute right-4 top-4 opacity-5 pointer-events-none">
-          <Lock size={80} className="text-slate-900" />
+        <div className="absolute right-3 top-3 opacity-[0.03] pointer-events-none">
+          <Lock size={60} className="text-slate-900" />
         </div>
       )}
 
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div>
-          <h3 className={`font-bold text-[17px] mb-2 leading-tight flex items-center gap-2 ${titleClass}`}>
+      <div className="flex justify-between items-start mb-3 relative z-10">
+        <div className="min-w-0 flex-1 mr-2">
+          <h3 className={`font-bold text-sm mb-1.5 leading-tight flex items-center gap-1.5 ${titleClass}`}>
             {title}
-            {isLocked && <Lock size={14} className="text-slate-400" />}
+            {isLocked && <Lock size={12} className="text-slate-400" />}
           </h3>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              {!isLocked && <img src={`https://picsum.photos/seed/${manager}/50`} className="w-6 h-6 rounded-full border border-slate-100" alt="" />}
-              {isLocked && <div className="w-6 h-6 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center"><Lock size={10} className="text-slate-400" /></div>}
-              <span className="text-xs text-slate-500 font-medium">负责人: {manager}</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5">
+              {!isLocked && <img src={`https://picsum.photos/seed/${manager}/50`} className="w-5 h-5 rounded-full border border-slate-100" alt="" />}
+              {isLocked && <div className="w-5 h-5 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center"><Lock size={8} className="text-slate-400" /></div>}
+              <span className="text-[11px] text-slate-500 font-medium truncate max-w-[80px]">{manager}</span>
             </div>
 
             {/* Manager Visibility Toggle */}
@@ -278,40 +285,40 @@ const ProjectCard = ({ title, manager, progress, status, deadline, onClick, onFo
         )}
       </div>
 
-      <div className="space-y-3 relative z-10">
-        <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+      <div className="space-y-2 relative z-10">
+        <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
           <span className={isDelayed ? 'text-red-500' : 'text-slate-400'}>{isDelayed ? '进度预警' : isLocked ? '进度未知' : '当前进度'}</span>
-          {!isLocked && <span className={`text-sm font-black ${isDelayed ? 'text-red-500' : 'text-slate-900'}`}>{progress}%</span>}
+          {!isLocked && <span className={`text-[13px] font-black ${isDelayed ? 'text-red-500' : 'text-slate-900'}`}>{progress}%</span>}
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
           {!isLocked && (
             <div className={`h-full rounded-full ${progressColor} ${isDelayed ? 'shadow-[0_0_10px_rgba(239,68,68,0.3)]' : ''}`} style={{ width: `${progress}%` }}></div>
           )}
         </div>
 
-        <div className="flex justify-between items-center pt-2 border-t border-slate-50 mt-2">
+        <div className="flex justify-between items-center pt-2.5 border-t border-slate-50 mt-1.5">
           {isLocked ? (
-            <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
-              <ShieldAlert size={12} />
-              <span>仅限项目成员访问</span>
+            <div className="flex items-center gap-1 text-slate-400 text-[10px] font-medium">
+              <ShieldAlert size={10} />
+              <span>成员可见</span>
             </div>
           ) : isDelayed ? (
-            <div className="flex items-center gap-1.5 text-red-600 text-[11px] font-medium bg-red-50 px-2 py-1 rounded">
-              <AlertCircle size={12} />
-              <span>任务滞后，需协调</span>
+            <div className="flex items-center gap-1 text-red-600 text-[10px] font-medium bg-red-50 px-1.5 py-0.5 rounded">
+              <AlertCircle size={10} />
+              <span>协调中</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
-              <Clock size={12} />
-              <span>截止: {deadline}</span>
+            <div className="flex items-center gap-1 text-slate-400 text-[10px] font-medium">
+              <Clock size={10} />
+              <span>{deadline} 截止</span>
             </div>
           )}
 
           <button
             onClick={onFollow}
-            className={`h-8 px-4 rounded-full text-xs font-bold border flex items-center gap-1.5 transition-all ${isFollowed
+            className={`h-7 px-3.5 rounded-full text-[10px] font-black border flex items-center gap-1 transition-all ${isFollowed
               ? 'bg-[#2C097F] border-[#2C097F] text-white shadow-md shadow-[#2C097F]/20'
               : isLocked
                 ? 'border-slate-300 text-slate-500 bg-white hover:bg-slate-50'
@@ -320,7 +327,7 @@ const ProjectCard = ({ title, manager, progress, status, deadline, onClick, onFo
                   : 'border-slate-200 text-slate-500 bg-white hover:bg-slate-50'
               }`}
           >
-            <Star size={12} className={isFollowed ? "fill-white" : ""} />
+            <Star size={10} className={isFollowed ? "fill-white" : ""} />
             {isFollowed ? '已关注' : '关注'}
           </button>
         </div>

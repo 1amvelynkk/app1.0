@@ -6,6 +6,7 @@ import { ProjectActivity, Project } from '../types';
 interface WorkspaceProps {
   user: {
     name: string;
+    id: string;
     title: string;
     dept: string;
     avatar: string;
@@ -27,14 +28,16 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
 
   // Filter projects by user participation (manager or participant)
   const userProjects = useMemo(() => {
-    return allProjects.filter(p =>
-      p.manager === user.name || p.role === 'participant'
-    );
-  }, [allProjects, user.name]);
+    return allProjects.filter(p => {
+      const isManager = p.manager === user.name || (p as any).manager_id === user.id;
+      const isParticipant = p.role === 'participant' || p.members?.some((m: any) => m.id === user.id || m.name === user.name);
+      return isManager || isParticipant;
+    });
+  }, [allProjects, user.name, user.id]);
 
   // Ongoing: user's incomplete projects (manager or participant)
   const ongoingProjects = useMemo(() => {
-    return userProjects.filter(p => p.progress > 0 && p.progress < 100);
+    return userProjects.filter(p => p.progress >= 0 && p.progress < 100);
   }, [userProjects]);
 
   // Delayed: projects behind schedule
@@ -82,48 +85,48 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F6F6F8]">
-      {/* Short Purple Header */}
-      <div className="bg-[#2C097F] text-white pt-12 pb-4 px-6 shadow-md relative z-10">
+      {/* Short Purple Header - Compressed for density */}
+      <div className="bg-[#2C097F] text-white pt-10 pb-3 px-4 shadow-md relative z-10">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="relative">
-              <img src={user.avatar} alt="Avatar" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover" />
+              <img src={user.avatar} alt="Avatar" className="w-10 h-10 rounded-full border-2 border-white/30 object-cover" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">早安，{user.name}</h1>
-              <p className="text-xs text-white/70 font-medium">{user.dept} · {user.title}</p>
+              <h1 className="text-lg font-bold leading-tight">早安，{user.name}</h1>
+              <p className="text-[10px] text-white/70 font-medium leading-tight">{user.dept} · {user.title}</p>
             </div>
           </div>
-          <button onClick={onNavigateToNotifications} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
-            <Bell size={20} />
+          <button onClick={onNavigateToNotifications} className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+            <Bell size={18} />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-6 pb-32 overflow-y-auto no-scrollbar">
-        {/* Today's Overview */}
-        <div className="mb-6">
-          <h2 className="text-gray-500 text-sm font-bold mb-3">今日概览</h2>
-          <div className="flex gap-2.5">
+      <div className="flex-1 px-4 pt-4 pb-32 overflow-y-auto no-scrollbar">
+        {/* Today's Overview - Compressed */}
+        <div className="mb-4">
+          <h2 className="text-gray-500 text-[10px] font-bold mb-2 uppercase tracking-tight">今日概览</h2>
+          <div className="flex gap-2">
             <StatCard
               title="进行中"
               count={ongoingProjects.length}
               color="blue"
-              icon={<Rocket size={24} />}
+              icon={<Rocket size={18} />}
               onClick={() => handleStatClick('ongoing')}
             />
             <StatCard
-              title="待办事项"
+              title="待处理"
               count={todoProjects.length}
               color="purple"
-              icon={<ClipboardList size={24} />}
+              icon={<ClipboardList size={18} />}
               onClick={() => handleStatClick('todos')}
             />
             <StatCard
-              title="延期预警"
+              title="延期"
               count={delayedProjects.length}
               color="red"
-              icon={<AlertCircle size={24} />}
+              icon={<AlertCircle size={18} />}
               onClick={() => handleStatClick('delayed')}
             />
           </div>
@@ -168,40 +171,39 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
           </div>
         )}
 
-        {/* New Project Button */}
-        <div className="mb-8">
+        {/* New Project Button - Compressed */}
+        <div className="mb-4">
           <button
             onClick={onNavigateToCreate}
-            className="w-full bg-white h-24 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center gap-3 group active:scale-[0.98] transition-all hover:shadow-md"
+            className="w-full bg-white h-12 rounded-xl shadow-sm border border-gray-100 flex items-center justify-center gap-2 group active:scale-[0.98] transition-all hover:shadow-md"
           >
-            <div className="w-10 h-10 rounded-lg bg-[#2C097F]/10 flex items-center justify-center text-[#2C097F] border-2 border-[#2C097F]/20">
-              <Plus size={24} strokeWidth={3} />
+            <div className="w-7 h-7 rounded-lg bg-[#2C097F]/10 flex items-center justify-center text-[#2C097F] border-2 border-[#2C097F]/20">
+              <Plus size={18} strokeWidth={3} />
             </div>
-            <span className="text-gray-700 font-bold text-xl tracking-tight">新建项目</span>
+            <span className="text-gray-700 font-bold text-sm tracking-tight text-[#2C097F]">新建项目</span>
           </button>
         </div>
 
-        {/* Urgent Tasks & Project Updates Tabs */}
-        <div className="mb-4">
-          <div className="flex items-center gap-6 border-b border-gray-200">
+        {/* Urgent Tasks & Project Updates Tabs - Compressed */}
+        <div className="mb-2.5">
+          <div className="flex items-center gap-4 border-b border-gray-200">
             <button
               onClick={() => setActiveTab('urgent')}
-              className={`pb-2 font-bold text-lg rounded-sm transition-colors ${activeTab === 'urgent' ? 'text-[#2C097F] border-b-[3px] border-[#5311EE]' : 'text-gray-400 border-transparent'}`}
+              className={`pb-1.5 font-bold text-sm rounded-sm transition-colors ${activeTab === 'urgent' ? 'text-[#2C097F] border-b-2 border-[#5311EE]' : 'text-gray-400 border-transparent'}`}
             >
               紧急待办
             </button>
             <button
               onClick={() => setActiveTab('updates')}
-              className={`pb-2 font-bold text-lg rounded-sm transition-colors ${activeTab === 'updates' ? 'text-[#2C097F] border-b-[3px] border-[#5311EE]' : 'text-gray-400 border-transparent'}`}
+              className={`pb-1.5 font-bold text-sm rounded-sm transition-colors ${activeTab === 'updates' ? 'text-[#2C097F] border-b-2 border-[#5311EE]' : 'text-gray-400 border-transparent'}`}
             >
               项目动态
             </button>
           </div>
         </div>
 
-        {/* Content based on Tab */}
         {activeTab === 'urgent' ? (
-          <div className="space-y-3 mb-8 animate-fade-in">
+          <div className="space-y-2 mb-6 animate-fade-in">
             {urgentTasks.length > 0 ? urgentTasks.map(task => (
               <WarningCard
                 key={task.id}
@@ -212,11 +214,11 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
                 onAction={() => handleNavigateWithPermission(task.id)}
               />
             )) : (
-              <div className="text-center text-gray-400 py-10">暂无紧急待办</div>
+              <div className="text-center text-gray-400 py-6 text-xs italic">暂无紧急待办</div>
             )}
           </div>
         ) : (
-          <div className="space-y-3 mb-8 animate-fade-in">
+          <div className="space-y-2 mb-6 animate-fade-in">
             {/* Filter out AI activities - they only show in Notifications */}
             {activities.filter(a => a.type !== 'ai').length > 0 ? activities.filter(a => a.type !== 'ai').map(activity => (
               <ActivityCard
@@ -227,45 +229,45 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
                 onAccept={() => onAcceptProject(activity.projectId)}
               />
             )) : (
-              <div className="text-center text-gray-400 py-10">暂无最新动态</div>
+              <div className="text-center text-gray-400 py-6 text-xs italic">暂无最新动态</div>
             )}
           </div>
         )}
 
-        {/* Latest Followed Projects - Always visible */}
+        {/* Latest Followed Projects - Compressed */}
         <div>
-          <h3 className="text-xs font-bold text-gray-400 mb-3 pl-1">最新关注项目</h3>
+          <h3 className="text-[10px] font-bold text-gray-400 mb-2 pl-1 uppercase tracking-tight">最新关注项目</h3>
 
           {latestFollowedProject ? (
-            <div onClick={() => handleNavigateWithPermission(latestFollowedProject.id)} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer">
-              <div className="flex justify-between items-center mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-200">
+            <div onClick={() => handleNavigateWithPermission(latestFollowedProject.id)} className="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-blue-200">
                     {latestFollowedProject.title.charAt(0)}
                   </div>
-                  <h4 className="font-bold text-gray-900 text-base">{latestFollowedProject.title}</h4>
+                  <h4 className="font-bold text-gray-900 text-sm">{latestFollowedProject.title}</h4>
                 </div>
-                <span className="px-3 py-1 bg-[#2C097F]/10 text-[#2C097F] text-xs font-bold rounded-lg border border-[#2C097F]/10">
+                <span className="px-2 py-0.5 bg-[#2C097F]/10 text-[#2C097F] text-[10px] font-bold rounded-lg border border-[#2C097F]/10">
                   {latestFollowedProject.status === 'ongoing' ? '进行中' : (latestFollowedProject.status === 'delayed' ? '延期' : '正常')}
                 </span>
               </div>
 
-              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+              <div className="flex justify-between text-[10px] text-gray-500 mb-1.5 font-medium">
                 <span>总体进度</span>
                 <span className="text-gray-900 font-bold">{latestFollowedProject.progress}%</span>
               </div>
 
               {/* Custom Progress Bar */}
-              <div className="w-full bg-gray-100 rounded-full h-2.5 mb-5 overflow-hidden">
-                <div className="bg-[#2C097F] h-2.5 rounded-full" style={{ width: `${latestFollowedProject.progress}%` }}></div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3 overflow-hidden">
+                <div className="bg-[#2C097F] h-1.5 rounded-full" style={{ width: `${latestFollowedProject.progress}%` }}></div>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                <img src={`https://picsum.photos/seed/${latestFollowedProject.manager}/50`} className="w-6 h-6 rounded-full border border-gray-100 object-cover" alt="" />
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-500">{latestFollowedProject.manager} 更新了项目状态</span>
+              <div className="flex items-center gap-2 pt-2.5 border-t border-gray-50">
+                <img src={`https://picsum.photos/seed/${latestFollowedProject.manager}/50`} className="w-5 h-5 rounded-full border border-gray-100 object-cover" alt="" />
+                <div className="flex items-center gap-1.5 text-[10px]">
+                  <span className="text-gray-500 font-medium">{latestFollowedProject.manager}</span>
                   <span className="text-gray-300">•</span>
-                  <span className="text-gray-400">刚刚</span>
+                  <span className="text-gray-400">刚刚更新</span>
                 </div>
               </div>
             </div>
@@ -299,14 +301,14 @@ const StatCard = ({ title, count, color, icon, onClick }: { title: string, count
   return (
     <div
       onClick={onClick}
-      className="flex-1 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 min-h-[100px] text-center cursor-pointer hover:shadow-md active:scale-[0.98] transition-all"
+      className="flex-1 bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 min-h-[85px] text-center cursor-pointer hover:shadow-md active:scale-[0.98] transition-all"
     >
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1 ${iconColors[color]}`}>
-        {icon}
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-0.5 ${iconColors[color]}`}>
+        {React.cloneElement(icon as React.ReactElement, { size: 18 })}
       </div>
       <div className="flex flex-col items-center">
-        <span className="text-xs font-bold text-gray-500 mb-1">{title}</span>
-        <div className={`text-2xl font-black ${countColors[color]} leading-none`}>{count}</div>
+        <span className="text-[10px] font-bold text-gray-500 mb-0.5">{title}</span>
+        <div className={`text-xl font-black ${countColors[color]} leading-none`}>{count}</div>
       </div>
     </div>
   );
@@ -331,20 +333,20 @@ const WarningCard: React.FC<{ title: string, deadline: string, actionLabel: stri
   return (
     <div
       onClick={onAction}
-      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-[0.99] transition-transform cursor-pointer"
+      className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 active:scale-[0.99] transition-transform cursor-pointer"
     >
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 relative ${iconContainer}`}>
-        {icon ? icon : <AlertCircle size={24} />}
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 relative ${iconContainer}`}>
+        {icon ? icon : <AlertCircle size={20} />}
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className={`text-[15px] mb-1 truncate ${highlightTitle ? 'font-black text-[#2C097F]' : 'font-bold text-gray-900'}`}>{title}</h4>
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
-          <Clock size={12} />
-          <span>{deadline}</span>
+        <h4 className={`text-sm mb-0.5 truncate ${highlightTitle ? 'font-black text-[#2C097F]' : 'font-bold text-gray-900'}`}>{title}</h4>
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
+          <Clock size={10} />
+          <span>{deadline} 到期</span>
         </div>
       </div>
       <button
-        className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap active:scale-95 transition-transform ${buttonStyle}`}
+        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap active:scale-95 transition-transform ${buttonStyle}`}
       >
         {actionLabel}
       </button>
@@ -385,38 +387,38 @@ const ActivityCard: React.FC<{ activity: ProjectActivity, onClick: () => void, c
   };
 
   return (
-    <div onClick={onClick} className={`bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 items-start active:scale-[0.99] transition-transform cursor-pointer overflow-hidden relative ${activity.category === 'alert' ? 'border-red-100 shadow-red-50' : ''}`}>
+    <div onClick={onClick} className={`bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex gap-3.5 items-start active:scale-[0.99] transition-transform cursor-pointer overflow-hidden relative ${activity.category === 'alert' ? 'border-red-100 shadow-red-50' : ''}`}>
       {activity.category === 'alert' && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>}
       {activity.category === 'ai' && <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>}
 
-      <img src={activity.userAvatar} className="w-10 h-10 rounded-full border border-gray-100 shrink-0 object-cover" alt="" />
+      <img src={activity.userAvatar} className="w-8 h-8 rounded-full border border-gray-100 shrink-0 object-cover" alt="" />
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start mb-1">
-          <span className="text-sm font-bold text-slate-900 truncate">
+        <div className="flex justify-between items-start mb-0.5">
+          <span className="text-[13px] font-bold text-slate-900 truncate">
             {activity.category === 'ai' && <span className="text-purple-600 mr-1">✨</span>}
             {activity.userName}
           </span>
-          <span className="text-[10px] text-gray-400 whitespace-nowrap">{activity.time}</span>
+          <span className="text-[9px] text-gray-400 whitespace-nowrap tracking-tighter">{activity.time}</span>
         </div>
-        <p className="text-sm text-slate-600 leading-snug mb-1">
+        <p className="text-[12px] text-slate-600 leading-tight mb-1">
           {activity.action} <span className="font-bold text-slate-800">{activity.target}</span>
         </p>
-        <div className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded w-fit mt-1 border ${getTagStyle()}`}>
-          <Layout size={10} />
+        <div className={`flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit mt-1 border ${getTagStyle()}`}>
+          <Layout size={8} />
           {activity.projectTitle}
         </div>
 
         {activity.type === 'invite' && activity.target === currentUser && (
           <button
             onClick={(e) => { e.stopPropagation(); onAccept(); }}
-            className="mt-3 bg-[#2C097F] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+            className="mt-2 bg-[#2C097F] text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-sm active:scale-95 transition-transform"
           >
             接受邀请
           </button>
         )}
       </div>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${getActionColor()}`}>
-        {getIcon()}
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${getActionColor()}`}>
+        {React.cloneElement(getIcon(), { size: 14 })}
       </div>
     </div>
   );

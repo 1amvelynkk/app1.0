@@ -180,15 +180,15 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
 
     if (msg.type === 'recommendation') {
       return (
-        <div className="space-y-4">
-          <p className="text-slate-800 font-medium">{msg.data.title}</p>
-          <div className="space-y-4">
+        <div className="space-y-3">
+          <p className="text-slate-800 font-medium text-xs">{msg.data.title}</p>
+          <div className="space-y-2">
             {msg.data.experts.map((expert: any, idx: number) => (
               <div key={idx}>
-                <p className="text-slate-800 font-bold mb-1">
+                <p className="text-slate-800 font-bold mb-0.5 text-xs">
                   {idx + 1}. <span className="text-[#2C097F]">{expert.name}</span>
                 </p>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-[10px] text-slate-500 leading-tight">
                   {expert.desc}
                 </p>
               </div>
@@ -196,20 +196,20 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
           </div>
 
           {/* Action Buttons specific to the screenshot */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-1">
             <button
               onClick={handleCreateMeeting}
-              className="flex-1 bg-[#E7C18F] hover:bg-[#dcb075] text-white py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-100 active:scale-95 transition-all"
+              className="flex-1 bg-[#E7C18F] hover:bg-[#dcb075] text-white py-2 rounded-lg flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all"
             >
-              <Users size={14} className="text-white" fill="currentColor" />
-              <span className="text-xs font-bold">创建项目</span>
+              <Users size={12} className="text-white" fill="currentColor" />
+              <span className="text-[10px] font-bold">创建项目</span>
             </button>
             <button
               onClick={handleSearchTemplates}
-              className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-slate-700 py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-slate-700 py-2 rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-all"
             >
-              <ExternalLink size={14} className="text-slate-500" />
-              <span className="text-xs font-bold">获取合规模板</span>
+              <ExternalLink size={12} className="text-slate-500" />
+              <span className="text-[10px] font-bold">获取合规模板</span>
             </button>
           </div>
         </div>
@@ -220,31 +220,31 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
   return (
     <div className="flex flex-col h-full bg-[#F6F6F8]">
       {/* Header */}
-      <div className="bg-[#F6F6F8]/95 backdrop-blur-md sticky top-0 z-50 px-4 py-3 flex items-center justify-between border-b border-gray-100">
-        <ChevronLeft className="text-slate-900" size={24} />
+      <div className="bg-[#F6F6F8]/95 backdrop-blur-md sticky top-0 z-50 px-4 py-2 flex items-center justify-between border-b border-gray-100">
+        <div className="w-6"></div>
         <div className="text-center">
-          <h1 className="text-base font-bold text-slate-900">AI 智能协作助手</h1>
-          <div className="flex items-center justify-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-            <p className="text-[10px] text-slate-500 font-bold">专家与跨部门对接已就绪</p>
+          <h1 className="text-sm font-bold text-slate-900">AI 智能协作助手</h1>
+          <div className="flex items-center justify-center gap-1 mt-0">
+            <span className="w-1 h-1 rounded-full bg-green-500"></span>
+            <p className="text-[9px] text-slate-500 font-bold">专家与跨部门对接已就绪</p>
           </div>
         </div>
-        <MoreHorizontal className="text-slate-900" />
+        <div className="w-6"></div>
       </div>
 
       {/* Chat Area - Added bottom padding to account for fixed input and nav bar */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-[200px]">
-        <div className="text-center text-[11px] text-gray-400 font-medium tracking-wide my-2">今天 14:32</div>
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 pb-[180px] no-scrollbar">
+        <div className="text-center text-[10px] text-gray-400 font-medium tracking-wide my-1">今天 14:32</div>
 
         {messages.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+          <div key={index} className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
             {msg.role === 'model' && (
-              <div className="w-9 h-9 rounded-full bg-[#2C097F]/10 flex items-center justify-center border border-[#2C097F]/10 shrink-0">
+              <div className="w-7 h-7 rounded-full bg-[#2C097F]/10 flex items-center justify-center border border-[#2C097F]/10 shrink-0">
                 <BotIcon />
               </div>
             )}
 
-            <div className={`rounded-2xl p-4 shadow-sm text-sm max-w-[85%] ${msg.role === 'user'
+            <div className={`rounded-xl px-3 py-2.5 shadow-sm text-xs max-w-[85%] ${msg.role === 'user'
               ? 'bg-[#2C097F] text-white rounded-tr-none'
               : 'bg-white text-slate-800 rounded-tl-none border border-gray-100'
               }`}>
@@ -252,20 +252,20 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
             </div>
 
             {msg.role === 'user' && (
-              <img src="https://picsum.photos/seed/kexin/100" className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover" alt="User" />
+              <img src="https://picsum.photos/seed/kexin/100" className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover" alt="User" />
             )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#2C097F]/10 flex items-center justify-center border border-[#2C097F]/10 shrink-0">
+          <div className="flex items-start gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#2C097F]/10 flex items-center justify-center border border-[#2C097F]/10 shrink-0">
               <BotIcon />
             </div>
-            <div className="bg-white rounded-2xl rounded-tl-none p-4 shadow-sm border border-gray-50 flex gap-2 items-center">
-              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></span>
-              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce delay-75"></span>
-              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce delay-150"></span>
+            <div className="bg-white rounded-xl rounded-tl-none px-3 py-2 shadow-sm border border-gray-50 flex gap-1.5 items-center">
+              <span className="w-1 h-1 bg-gray-300 rounded-full animate-bounce"></span>
+              <span className="w-1 h-1 bg-gray-300 rounded-full animate-bounce delay-75"></span>
+              <span className="w-1 h-1 bg-gray-300 rounded-full animate-bounce delay-150"></span>
             </div>
           </div>
         )}
@@ -274,38 +274,38 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
       </div>
 
       {/* Input Area - Fixed positioning above bottom nav */}
-      <div className="fixed bottom-[70px] left-0 right-0 bg-white z-40 border-t border-gray-50 pb-2 shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
+      <div className="fixed bottom-[60px] left-0 right-0 bg-white z-40 border-t border-gray-50 pb-1.5 shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         {/* Suggestion Chips */}
-        <div className="px-4 pb-3 pt-3 flex gap-3 overflow-x-auto no-scrollbar">
+        <div className="px-4 pb-2 pt-2 flex gap-2 overflow-x-auto no-scrollbar">
           <Chip
-            icon={<Search size={14} className="text-[#2C097F]" />}
+            icon={<Search size={12} className="text-[#2C097F]" />}
             label="查找技术专家"
             onClick={onSwitchToOrg}
           />
           <Chip
-            icon={<GitPullRequest size={14} className="text-[#2C097F]" />}
+            icon={<GitPullRequest size={12} className="text-[#2C097F]" />}
             label="申请跨部门协作"
             onClick={handleCrossDeptCollaboration}
           />
         </div>
 
-        <div className="px-4 flex items-center gap-3">
-          <div className="flex-1 bg-[#F9FAFB] rounded-full px-5 py-2.5 flex items-center border border-transparent focus-within:border-[#2C097F]/20 transition-colors h-11">
+        <div className="px-4 flex items-center gap-2">
+          <div className="flex-1 bg-[#F9FAFB] rounded-full px-4 py-2 flex items-center border border-transparent focus-within:border-[#2C097F]/20 transition-colors h-9">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入需求，如“推荐Java专家”..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400 text-slate-900"
+              placeholder="输入需求..."
+              className="flex-1 bg-transparent text-xs outline-none placeholder:text-gray-400 text-slate-900"
             />
           </div>
 
           <button
             onClick={handleSend}
-            className={`w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg shadow-[#2C097F]/30 transition-all active:scale-95 shrink-0 bg-[#2C097F]`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-white shadow-lg shadow-[#2C097F]/30 transition-all active:scale-95 shrink-0 bg-[#2C097F]`}
           >
-            <Send size={20} className="-ml-0.5" fill="currentColor" />
+            <Send size={16} className="-ml-0.5" fill="currentColor" />
           </button>
         </div>
       </div>
@@ -316,7 +316,7 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
 const Chip = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: () => void }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-2 px-4 py-2 bg-[#F3F4F6] hover:bg-gray-200 rounded-full text-slate-600 text-xs font-medium whitespace-nowrap transition-colors active:scale-95"
+    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F3F4F6] hover:bg-gray-200 rounded-full text-slate-600 text-[10px] font-bold whitespace-nowrap transition-colors active:scale-95"
   >
     {icon}
     {label}
@@ -325,6 +325,6 @@ const Chip = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, 
 
 const BotIcon = () => (
   <div className="relative">
-    <Bot size={20} className="text-[#2C097F]" strokeWidth={2} />
+    <Bot size={16} className="text-[#2C097F]" strokeWidth={2.5} />
   </div>
 );

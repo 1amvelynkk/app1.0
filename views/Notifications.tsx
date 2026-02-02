@@ -137,15 +137,15 @@ export const Notifications: React.FC<NotificationsProps> = ({ onBack, onProjectC
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 pb-20">
-        {/* Filters */}
-        <div className="flex gap-4 mb-6 border-b border-gray-200 pb-0">
+      <div className="flex-1 overflow-y-auto p-3.5 pb-20">
+        {/* Filters - Compressed */}
+        <div className="flex gap-4 mb-3 border-b border-gray-200 pb-0">
           <FilterTab label="全部" active={filter === 'all'} onClick={() => setFilter('all')} />
           <FilterTab label="预警" active={filter === 'alert'} onClick={() => setFilter('alert')} />
           <FilterTab label="AI建议" active={filter === 'ai'} onClick={() => setFilter('ai')} />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {recent.map(item => (
             <NotificationCard
               key={item.id}
@@ -158,7 +158,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ onBack, onProjectC
 
           {old.length > 0 && (
             <>
-              <div className="flex items-center gap-4 py-4 opacity-60">
+              <div className="flex items-center gap-4 py-2 opacity-60">
                 <div className="h-px bg-gray-200 flex-1"></div>
                 <span className="text-xs text-gray-400">更早的消息</span>
                 <div className="h-px bg-gray-200 flex-1"></div>
@@ -257,41 +257,41 @@ const NotificationCard = ({ item, onClick, isOld, isSelectionMode, isSelected }:
   return (
     <div
       onClick={onClick}
-      className={`bg-white p-4 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden flex items-center gap-3 transition-all ${isOld ? 'opacity-80' : ''} ${isSelected ? 'border-[#2C097F] bg-blue-50/30' : ''}`}
+      className={`bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden flex items-center gap-2.5 transition-all ${isOld ? 'opacity-80' : ''} ${isSelected ? 'border-[#2C097F] bg-blue-50/30' : ''}`}
     >
       {isSelectionMode && (
-        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-[#2C097F] bg-[#2C097F]' : 'border-gray-300'}`}>
-          {isSelected && <CheckCircle2 size={14} className="text-white" />}
+        <div className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-[#2C097F] bg-[#2C097F]' : 'border-gray-300'}`}>
+          {isSelected && <CheckCircle2 size={12} className="text-white" />}
         </div>
       )}
 
       {isAlert && !isSelectionMode && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>}
       {item.type === 'ai' && !isSelectionMode && <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>}
 
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
-        {icon}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
+        {React.cloneElement(icon as React.ReactElement, { size: 16 })}
       </div>
 
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div className="flex justify-between items-start gap-2">
-          <p className="text-sm text-slate-800 font-medium leading-relaxed flex-1">
+          <p className="text-[13px] text-slate-800 font-bold leading-snug flex-1">
             {renderTitle(item.title, item.type)}
           </p>
           {!isSelectionMode && (
             <button
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border whitespace-nowrap active:scale-95 transition-transform ${btnStyle}`}
+              className={`text-[10px] font-black px-2.5 py-1 rounded-lg border whitespace-nowrap active:scale-95 transition-transform ${btnStyle}`}
             >
               {item.action}
             </button>
           )}
         </div>
 
-        <div className="flex justify-between items-center mt-3">
-          <div className={`text-xs ${tagStyle}`}>
+        <div className="flex justify-between items-center mt-1.5">
+          <div className={`text-[10px] ${tagStyle}`}>
             {item.type === 'ai' && '✨ '}
             {item.tag || (isOld ? item.time : '')}
           </div>
-          {!isOld && <span className="text-xs text-gray-400">{item.time}</span>}
+          {!isOld && <span className="text-[10px] text-gray-400">{item.time}</span>}
         </div>
       </div>
     </div>

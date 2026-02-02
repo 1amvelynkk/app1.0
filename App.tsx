@@ -18,7 +18,7 @@ const initialOrgData: Department = {
   id: 'root',
   name: '集团总部',
   enName: 'Group Headquarters',
-  count: '200+人',
+  count: '21人',
   level: 0,
   members: [],
   children: [
@@ -26,7 +26,7 @@ const initialOrgData: Department = {
       id: 'rnd',
       name: '研发中心',
       enName: 'R&D Center',
-      count: '80人',
+      count: '9人',
       level: 1,
       members: [],
       children: [
@@ -34,7 +34,7 @@ const initialOrgData: Department = {
           id: 'frontend',
           name: '前端开发部',
           enName: 'Frontend Department',
-          count: '24人',
+          count: '3人',
           level: 2,
           members: [
             { id: 'm1', name: "林木风", role: "资深前端专家", title: "资深前端专家", dept: "前端开发部", projectCount: 3, status: "online", tags: ['Vue', 'React', 'Arco'], avatar: "https://picsum.photos/seed/lin/100", joinDays: 800, projects: [{ id: 'p1', title: 'Q4市场战略', role: '参与者' }] },
@@ -46,7 +46,7 @@ const initialOrgData: Department = {
           id: 'backend',
           name: '后端开发部',
           enName: 'Backend Department',
-          count: '38人',
+          count: '3人',
           level: 2,
           members: [
             { id: 'm4', name: "李思", role: "Java 专家", title: "Java 专家", dept: "后端开发部", projectCount: 4, status: "online", tags: ['Java', 'Spring'], avatar: "https://picsum.photos/seed/lisi/100", joinDays: 600, projects: [] },
@@ -58,7 +58,7 @@ const initialOrgData: Department = {
           id: 'ai-lab',
           name: 'AI 实验室',
           enName: 'AI Laboratory',
-          count: '15人',
+          count: '3人',
           level: 2,
           members: [
             { id: 'ai1', name: "Dr. Wu", role: "AI 科学家", title: "首席科学家", dept: "AI 实验室", projectCount: 2, status: "online", tags: ['LLM', 'Python'], avatar: "https://picsum.photos/seed/drwu/100", joinDays: 200, projects: [] },
@@ -72,7 +72,7 @@ const initialOrgData: Department = {
       id: 'product',
       name: '产品设计中心',
       enName: 'Product & Design',
-      count: '30人',
+      count: '3人',
       level: 1,
       members: [],
       children: [
@@ -80,7 +80,7 @@ const initialOrgData: Department = {
           id: 'design',
           name: 'UI 设计部',
           enName: 'UI Design Dept',
-          count: '12人',
+          count: '3人',
           level: 2,
           members: [
             { id: 'm6', name: "张欣", role: "UI 设计师", title: "UI 设计师", dept: "UI 设计部", projectCount: 3, status: "online", tags: ['Figma', 'Sketch'], avatar: "https://picsum.photos/seed/zhangxin/100", joinDays: 700, projects: [] },
@@ -94,7 +94,7 @@ const initialOrgData: Department = {
       id: 'admin',
       name: '行政与人力',
       enName: 'Admin & HR',
-      count: '20人',
+      count: '9人',
       level: 1,
       members: [],
       children: [
@@ -102,7 +102,7 @@ const initialOrgData: Department = {
           id: 'hr',
           name: '人力资源部',
           enName: 'HR Dept',
-          count: '10人',
+          count: '3人',
           level: 2,
           members: [
             { id: 'hr1', name: "HRD", role: "人力总监", title: "人力总监", dept: "人力资源部", projectCount: 2, status: "busy", tags: ['Recruitment'], avatar: "https://picsum.photos/seed/hrd/100", joinDays: 2000, projects: [] },
@@ -114,7 +114,7 @@ const initialOrgData: Department = {
           id: 'admin-dept',
           name: '行政部',
           enName: 'Administration',
-          count: '10人',
+          count: '3人',
           level: 2,
           members: [
             { id: 'adm1', name: "行政小李", role: "行政主管", title: "行政主管", dept: "行政部", projectCount: 10, status: "online", tags: ['Event'], avatar: "https://picsum.photos/seed/adm1/100", joinDays: 800, projects: [] },
@@ -126,7 +126,7 @@ const initialOrgData: Department = {
           id: 'finance-dept',
           name: '财务部',
           enName: 'Finance Dept',
-          count: '8人',
+          count: '2人',
           level: 2,
           members: [
             { id: 'm_wang_jl', name: "王经理", role: "财务经理", title: "财务经理", dept: "财务部", projectCount: 2, status: "online", tags: ['Finance', 'Audit'], avatar: "https://picsum.photos/seed/wangjl/100", joinDays: 800, projects: [] },
@@ -137,7 +137,7 @@ const initialOrgData: Department = {
           id: 'legal-dept',
           name: '法务部',
           enName: 'Legal Dept',
-          count: '5人',
+          count: '1人',
           level: 2,
           members: [
             { id: 'm_li_ls', name: "李律师", role: "法务顾问", title: "法务顾问", dept: "法务部", projectCount: 1, status: "online", tags: ['Legal', 'Compliance'], avatar: "https://picsum.photos/seed/lils/100", joinDays: 600, projects: [] }
@@ -362,17 +362,12 @@ export default function App() {
           `)
           .order('created_at', { ascending: false });
 
-        if (projectsData && projectsData.length > 0) {
+        if (projectsData) {
           const dbProjects = projectsData.map((p: any) => ({
             ...p,
             hasPermission: true,
             role: p.project_members?.find((m: any) => m.member_id === user.id)?.role || 'none'
           }));
-
-          // Sync logic: Merge DB projects with hardcoded examples
-          // For hardcoded projects that exist in DB, use the DB's progress/status to persist changes
-          console.log('=== Project Merge Logic ===');
-          console.log('DB Projects loaded:', dbProjects.map(p => ({ id: p.id, progress: p.progress, status: p.status })));
 
           setAllProjects(prev => {
             const dbProjectMap = new Map(dbProjects.map(p => [p.id, p]));
@@ -381,12 +376,17 @@ export default function App() {
             const mergedHardcoded = prev.filter(p => !p.created_at).map(localProject => {
               const dbVersion = dbProjectMap.get(localProject.id);
               if (dbVersion) {
-                // Merge DB values (progress, status) into local project to persist changes
+                // Merge DB values (progress, status, role) into local project to persist changes
+                const updatedMembers = dbVersion.role === 'none'
+                  ? (localProject.members?.filter((m: any) => m.id !== user.id && m.name !== user.name) || [])
+                  : localProject.members;
+
                 return {
                   ...localProject,
                   progress: dbVersion.progress,
                   status: dbVersion.status,
-                  // Keep other local fields like milestones for demo
+                  role: dbVersion.role, // PERSIST PERMANENT LEAVE
+                  members: updatedMembers
                 };
               }
               return localProject;
@@ -1022,6 +1022,20 @@ export default function App() {
     if (!window.confirm('确定要退出此项目吗？')) return;
 
     try {
+      // 0. Ensure project exists in DB if it's a demo project
+      const project = allProjects.find(p => (p.id || (p as any).projectId) === projectId);
+      if (project && !project.created_at) {
+        await supabase.from('projects').upsert({
+          id: project.id,
+          title: project.title,
+          manager: project.manager || '未知',
+          department: project.department || '未知',
+          progress: project.progress,
+          status: project.status,
+          deadline: project.deadline
+        });
+      }
+
       // 1. Remove from Supabase project_members
       const { error } = await supabase
         .from('project_members')
@@ -1035,7 +1049,16 @@ export default function App() {
       }
 
       // 2. Update local state
-      setAllProjects(prev => prev.filter(p => (p.id || (p as any).projectId) !== projectId));
+      setAllProjects(prev => prev.map(p => {
+        if ((p.id || (p as any).projectId) === projectId) {
+          return {
+            ...p,
+            role: 'none',
+            members: p.members?.filter((m: any) => m.id !== user.id && m.name !== user.name) || []
+          };
+        }
+        return p;
+      }));
       setSelectedProjectId(null);
       setCurrentView('main');
 

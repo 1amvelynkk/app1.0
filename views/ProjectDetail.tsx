@@ -384,50 +384,50 @@ export default function ProjectDetail({
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-[#111827] sticky top-0 z-50 px-4 py-3 flex items-center justify-between pt-12">
-        <button onClick={onBack} className="flex items-center gap-1 text-white font-bold">
-          <ChevronLeft /> {fromNotification ? "返回消息" : "返回"}
+      {/* Header - Compressed */}
+      <div className="bg-[#111827] sticky top-0 z-50 px-4 py-3 flex items-center justify-between pt-10">
+        <button onClick={onBack} className="flex items-center gap-1 text-white font-bold text-sm">
+          <ChevronLeft size={18} /> {fromNotification ? "消息" : "返回"}
         </button>
-        <h1 className="text-lg font-bold">项目详情</h1>
+        <h1 className="text-base font-bold">项目详情</h1>
         <button
           onClick={() => projectId && onToggleFollow(projectId)}
-          className={`p-2 rounded-full transition-colors ${isFollowed ? 'bg-[#2C097F] text-white shadow-lg' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
+          className={`p-1.5 rounded-full transition-colors ${isFollowed ? 'bg-[#2C097F] text-white shadow-lg' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
         >
-          <Bookmark size={20} fill={isFollowed ? "currentColor" : "none"} />
+          <Bookmark size={18} fill={isFollowed ? "currentColor" : "none"} />
         </button>
 
         {isManager && (
           <button
             onClick={() => projectId && onDeleteProject(projectId)}
-            className="p-2 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500/20 transition-colors ml-2"
-            title="删除项目"
+            className="p-1.5 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500/20 transition-colors ml-1.5"
+            title="删除"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
 
         {!isManager && projectId && (
           <button
             onClick={() => onLeaveProject(projectId)}
-            className="px-3 py-1.5 bg-gray-500/10 text-gray-500 rounded-lg hover:bg-gray-500/20 transition-colors ml-2 text-xs font-bold"
+            className="px-2 py-1 bg-gray-500/10 text-gray-500 rounded-lg hover:bg-gray-500/20 transition-colors ml-1.5 text-[10px] font-bold"
           >
-            退出项目
+            退出
           </button>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 pb-24">
-        {/* Project Header */}
-        <div className="flex gap-4 mb-6">
-          <div className="w-24 h-24 rounded-xl overflow-hidden shadow-lg border border-white/10 shrink-0">
+        {/* Project Header - Compressed */}
+        <div className="flex gap-3 mb-4">
+          <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border border-white/10 shrink-0">
             <img src={data.image} className="w-full h-full object-cover" alt="Cover" />
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="text-xl font-bold leading-tight">{data.title}</h2>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-1">
+              <h2 className="text-lg font-bold leading-tight truncate">{data.title}</h2>
               <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full border opacity-90"
+                className="text-[9px] font-black px-1.5 py-0.5 rounded-full border opacity-90 ml-2 whitespace-nowrap"
                 style={{
                   backgroundColor: data.status === '已完成' ? '#22c55e20' : `${data.color}20`,
                   color: data.status === '已完成' ? '#22c55e' : data.color,
@@ -437,96 +437,89 @@ export default function ProjectDetail({
                 {data.status}
               </span>
             </div>
-            <div className="space-y-1 text-sm text-gray-300">
-              <p>负责部门: {data.department}</p>
-              <p>负责人: {data.manager}</p>
+            <div className="space-y-0.5 text-xs text-gray-400">
+              <p className="truncate">部 门: {data.department}</p>
+              <p className="truncate">负责人: {data.manager}</p>
             </div>
           </div>
         </div>
 
-        {/* Progress Card */}
-        <div className="bg-[#1e293b] rounded-xl p-4 border border-white/5 shadow-lg mb-6">
-          <div className="flex justify-between items-end mb-2">
-            <span className="font-medium text-sm">总体进度</span>
-            <span className="font-bold" style={{ color: data.color }}>{data.progress}%</span>
+        {/* Progress Card - Compressed */}
+        <div className="bg-[#1e293b] rounded-xl p-3 border border-white/5 shadow-lg mb-4">
+          <div className="flex justify-between items-end mb-1.5">
+            <span className="font-bold text-[11px] uppercase tracking-wider text-gray-400">总体进度</span>
+            <span className="font-black text-sm" style={{ color: data.color }}>{data.progress}%</span>
           </div>
-          <div className="w-full bg-[#324867] rounded-full h-2 mb-3">
+          <div className="w-full bg-[#324867] rounded-full h-1.5 mb-2.5">
             <div
-              className="h-2 rounded-full transition-all duration-1000"
+              className="h-1.5 rounded-full transition-all duration-1000"
               style={{ width: `${data.progress}%`, backgroundColor: data.color }}
             ></div>
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs text-[#92a9c9]">
-              <Clock size={12} />
-              <span>{data.deadline}</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-[#92a9c9]">
+              <Clock size={10} />
+              <span>{data.deadline} 截止</span>
             </div>
             {/* Mark Complete Button - Only visible for manager on incomplete projects */}
             {isManager && !isCompleted && onMarkComplete && (
               <button
                 onClick={() => projectId && onMarkComplete(projectId)}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors"
+                className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-lg flex items-center gap-1 transition-colors"
               >
-                <CheckCircle2 size={12} />
+                <CheckCircle2 size={10} />
                 标记已完成
               </button>
             )}
             {isCompleted && (
-              <span className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg flex items-center gap-1.5">
-                <CheckCircle2 size={12} />
+              <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg flex items-center gap-1">
+                <CheckCircle2 size={10} />
                 已完成
               </span>
             )}
           </div>
         </div>
 
-        {/* AI Insight Overlay */}
+        {/* AI Insight Overlay - Compressed */}
         {projectInsight && (
-          <div className="mb-6 bg-gradient-to-r from-[#2C097F]/20 to-transparent border border-[#2C097F]/30 p-4 rounded-xl flex gap-3 animate-fade-in">
-            <div className="w-8 h-8 rounded-lg bg-[#2C097F] flex items-center justify-center shrink-0 shadow-lg shadow-[#2C097F]/30">
-              <Sparkles size={16} className="text-white" />
+          <div className="mb-4 bg-gradient-to-r from-[#2C097F]/20 to-transparent border border-[#2C097F]/30 p-3 rounded-xl flex gap-2.5 animate-fade-in">
+            <div className="w-7 h-7 rounded-lg bg-[#2C097F] flex items-center justify-center shrink-0 shadow-lg shadow-[#2C097F]/30">
+              <Sparkles size={14} className="text-white" />
             </div>
             <div>
-              <h4 className="text-[10px] font-black text-[#8B5CF6] uppercase tracking-wider mb-0.5">AI 智能洞察</h4>
-              <p className="text-sm text-gray-100 leading-snug">{projectInsight}</p>
+              <h4 className="text-[9px] font-black text-[#8B5CF6] uppercase tracking-wider mb-0.5">AI 智能洞察</h4>
+              <p className="text-[13px] text-gray-100 leading-snug">{projectInsight}</p>
             </div>
           </div>
         )}
 
-        {/* Members */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold uppercase tracking-wider text-gray-200">核心成员</h3>
-            {displayMembers.length > 3 && <span className="text-xs text-green-400 font-bold bg-green-500/20 px-2 py-0.5 rounded">新成员加入</span>}
+        {/* Members - Compressed */}
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2.5">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400">核心成员</h3>
+            {displayMembers.length > 3 && <span className="text-[9px] text-green-400 font-bold bg-green-500/20 px-1.5 py-0.5 rounded">NEW</span>}
           </div>
 
-          {/* Detailed Member List with Rating for Manager */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {displayMembers.map((m: any, i: number) => {
-              const isMe = m.id === 'kexin'; // user.id
-
-              // Only filter out "Me" if I am the manager rating others
-              // If I am just viewing, I should see myself in the list
-              // specialized logic: Manager sees everyone to rate (except self maybe? or rate self?) 
-              // Requirement: "项目核心成员必须展示全部成员" -> Show EVERYONE including self
-
+              const isMe = m.id === 'kexin';
               const existingRating = allRatings.find(r => r.project_id === projectId && r.ratee_id === m.id);
 
               return (
-                <div key={i} className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
+                <div key={i} className="flex items-center justify-between bg-white/5 p-2.5 rounded-xl border border-white/5">
                   <div
-                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity min-w-0 flex-1"
                     onClick={() => onViewProfile(m)}
                   >
-                    <img src={m.avatar} className="w-8 h-8 rounded-full object-cover ring-2 ring-transparent hover:ring-[#2C097F] transition-all" alt="" />
+                    <img src={m.avatar} className="w-7 h-7 rounded-full object-cover ring-2 ring-transparent hover:ring-[#2C097F] transition-all shrink-0" alt="" />
                     <div className="min-w-0">
-                      <div className="text-sm font-bold text-gray-200 truncate">{m.name}</div>
-                      <div className="text-[10px] text-gray-500 truncate">{m.role}</div>
+                      <div className="text-[13px] font-bold text-gray-100 truncate">{m.name}</div>
+                      <div className="text-[9px] text-gray-500 truncate">{m.role}</div>
                     </div>
                   </div>
 
                   {isManager && !isMe ? (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 pl-2">
                       {[1, 2, 3, 4, 5].map(star => {
                         const active = (existingRating?.score || 0) >= star;
                         return (
@@ -541,30 +534,29 @@ export default function ProjectDetail({
                                 setTimeout(() => setShowToast(false), 2000);
                               }
                             }}
-                            className={`transition-colors active:scale-125 ${active ? 'text-amber-400' : 'text-gray-600'}`}
+                            className={`transition-colors active:scale-125 ${active ? 'text-amber-400' : 'text-gray-700'}`}
                           >
-                            <Star size={14} fill={active ? "currentColor" : "none"} />
+                            <Star size={12} fill={active ? "currentColor" : "none"} />
                           </button>
                         );
                       })}
                     </div>
                   ) : existingRating && (
-                    <div className="flex items-center gap-1 text-amber-400">
-                      <Star size={12} fill="currentColor" />
-                      <span className="text-xs font-bold">{existingRating.score}</span>
+                    <div className="flex items-center gap-1 text-amber-400 pl-2">
+                      <Star size={10} fill="currentColor" />
+                      <span className="text-[11px] font-black">{existingRating.score}</span>
                     </div>
                   )}
                 </div>
               );
             })}
 
-            {/* INVITE BUTTON - Only visible if current user is manager AND project not completed */}
             {isManager && !isCompleted && (
               <button
                 onClick={() => setShowMemberModal(true)}
-                className="w-full py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 gap-2 hover:bg-white/10 transition-colors text-xs font-bold"
+                className="w-full py-1.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 gap-1.5 hover:bg-white/10 transition-colors text-[10px] font-bold"
               >
-                <Plus size={16} /> 邀请新成员
+                <Plus size={14} /> 邀请新成员
               </button>
             )}
           </div>
@@ -583,70 +575,70 @@ export default function ProjectDetail({
           </ul>
         </div>
 
-        {/* Milestones */}
+        {/* Milestones - Compressed */}
         <div>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg">关键里程碑</h3>
-            <span className="text-xs font-bold" style={{ color: data.color }}>查看全部</span>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-bold text-base">关键里程碑</h3>
+            <span className="text-[10px] font-black uppercase tracking-tight" style={{ color: data.color }}>查看全部</span>
           </div>
 
-          <div className="space-y-4 relative pl-3">
-            <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#324867]"></div>
+          <div className="space-y-3 relative pl-2.5">
+            <div className="absolute left-[13.5px] top-3 bottom-3 w-0.5 bg-[#324867]"></div>
 
             {data.milestones.map((milestone: any, index: number) => {
               const isActive = milestone.status === 'active';
               const isCompleted = milestone.status === 'completed';
 
               return (
-                <div key={index} className={`relative pl-7 ${(!isActive && !isCompleted) ? 'opacity-60' : ''}`}>
+                <div key={index} className={`relative pl-6 ${(!isActive && !isCompleted) ? 'opacity-40' : ''}`}>
                   <div
-                    className={`absolute left-0 top-3 w-4 h-4 rounded-full ring-4 ring-[#111827]`}
+                    className={`absolute left-0 top-2 w-3.5 h-3.5 rounded-full ring-4 ring-[#111827] z-10`}
                     style={{ backgroundColor: isActive ? data.color : (isCompleted ? '#4F46E5' : '#324867') }}
                   ></div>
 
                   {isActive ? (
-                    <div className="bg-[#1e293b] border-l-4 rounded-lg p-4 shadow-xl" style={{ borderLeftColor: data.color }}>
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-bold text-base">{milestone.title}</span>
+                    <div className="bg-[#1e293b] border-l-4 rounded-lg p-3 shadow-xl" style={{ borderLeftColor: data.color }}>
+                      <div className="flex justify-between items-start mb-1.5">
+                        <span className="font-bold text-sm leading-tight">{milestone.title}</span>
                         {milestone.alert && (
                           <span
-                            className="text-black text-[8px] font-black px-1.5 py-0.5 rounded-l-md -mr-4 uppercase"
+                            className="text-black text-[7px] font-black px-1.5 py-0.5 rounded-l-md -mr-3 uppercase"
                             style={{ backgroundColor: data.color }}
                           >
                             {milestone.alert}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-[#92a9c9] mb-4">
-                        <Clock size={12} />
-                        <span>截止日期: {milestone.date}</span>
+                      <div className="flex items-center gap-1 text-[10px] text-[#92a9c9] mb-3">
+                        <Clock size={10} />
+                        <span>截止: {milestone.date}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <img
                             src={displayMembers.find((m: any) => m.name === milestone.responsible)?.avatar || `https://picsum.photos/seed/${milestone.responsible || 'manager'}/50`}
-                            className="w-6 h-6 rounded-full object-cover"
+                            className="w-5 h-5 rounded-full object-cover"
                             alt=""
                           />
-                          <span className="text-xs text-[#92a9c9]">负责人: {milestone.responsible || data.manager}</span>
+                          <span className="text-[11px] text-[#92a9c9]">{milestone.responsible || data.manager}</span>
                         </div>
                         {isManager && (
                           <button
                             onClick={() => handleRemind(milestone.title)}
-                            className="text-black text-[9px] font-bold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow-lg active:scale-95 transition-transform"
+                            className="text-black text-[9px] font-black px-2 py-1 rounded-md flex items-center gap-1 shadow-lg active:scale-95 transition-transform"
                             style={{ backgroundColor: data.color }}
                           >
-                            <Bell size={9} />
-                            一键提醒
+                            <Bell size={8} />
+                            催办
                           </button>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-[#1e293b]/30 border border-white/5 rounded-lg p-3">
-                      <div className="flex justify-between mb-1">
-                        <span className="font-bold text-sm">{milestone.title}</span>
-                        <span className="text-xs text-[#92a9c9]">{milestone.date}</span>
+                    <div className="bg-[#1e293b]/30 border border-white/5 rounded-lg p-2.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-xs truncate max-w-[200px]">{milestone.title}</span>
+                        <span className="text-[10px] text-[#92a9c9]">{milestone.date}</span>
                       </div>
                     </div>
                   )}
@@ -657,7 +649,7 @@ export default function ProjectDetail({
         </div>
       </div>
 
-      <div className="p-4 bg-[#111827] sticky bottom-0 safe-bottom">
+      <div className="p-3 bg-[#111827] sticky bottom-0 safe-bottom">
         <input
           type="file"
           ref={fileInputRef}
@@ -667,11 +659,11 @@ export default function ProjectDetail({
         <button
           onClick={handleButtonClick}
           disabled={buttonConfig.disabled}
-          className={`w-full text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-transform border border-white/10 ${buttonConfig.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full text-white py-3.5 rounded-xl font-black flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-transform border border-white/10 ${buttonConfig.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{ backgroundColor: buttonConfig.color }}
         >
-          {buttonConfig.icon}
-          {buttonConfig.label}
+          {React.cloneElement(buttonConfig.icon as React.ReactElement, { size: 16 })}
+          <span className="text-sm">{buttonConfig.label}</span>
         </button>
       </div>
     </div >

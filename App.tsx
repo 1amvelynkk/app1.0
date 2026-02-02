@@ -1036,7 +1036,7 @@ export default function App() {
 
   const handleLeaveProject = async (projectId: string) => {
     if (isDemoMode) {
-      updateLocalState();
+      updateLocalState(projectId);
       return;
     }
 
@@ -1067,16 +1067,16 @@ export default function App() {
         return;
       }
 
-      updateLocalState();
+      updateLocalState(projectId);
     } catch (err) {
       console.error('Leave project failed:', err);
     }
   };
 
-  const updateLocalState = () => {
+  const updateLocalState = (pid: string) => {
     // 2. Update local state
     setAllProjects(prev => prev.map(p => {
-      if ((p.id || (p as any).projectId) === projectId) {
+      if ((p.id || (p as any).projectId) === pid) {
         return {
           ...p,
           role: 'none',

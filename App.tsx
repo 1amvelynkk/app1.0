@@ -326,6 +326,11 @@ export default function App() {
   const [currentView, setCurrentView] = useState<string>('main');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
+  // Demo Mode detection
+  const isDemoMode = useMemo(() => {
+    return new URLSearchParams(window.location.search).get('mode') === 'demo';
+  }, []);
+
   const [previousNavState, setPreviousNavState] = useState<NavigationState | null>(null);
   const [viewingUser, setViewingUser] = useState<any>(null);
   const [projectListFilter, setProjectListFilter] = useState<'all' | 'my' | 'participated' | 'followed'>('all');
@@ -576,7 +581,9 @@ export default function App() {
     };
 
     // 1. Insert into Supabase
-    await supabase.from('activities').insert(newActivity);
+    if (!isDemoMode) {
+      await supabase.from('activities').insert(newActivity);
+    }
 
     // 2. Update local state
     setProjectActivities(prev => [{
@@ -668,6 +675,7 @@ export default function App() {
       }
     });
 
+    if (isDemoMode) return;
     try {
       if (isFollowing) {
         // Unfollow in DB
@@ -696,21 +704,23 @@ export default function App() {
   };
 
   const handleUpdateProject = async (updatedProject: any) => {
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        title: updatedProject.title,
-        progress: updatedProject.progress,
-        status: updatedProject.status,
-        deadline: updatedProject.deadline,
-        description: updatedProject.description,
-        visibility: updatedProject.visibility
-      })
-      .eq('id', updatedProject.id);
+    if (!isDemoMode) {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          title: updatedProject.title,
+          progress: updatedProject.progress,
+          status: updatedProject.status,
+          deadline: updatedProject.deadline,
+          description: updatedProject.description,
+          visibility: updatedProject.visibility
+        })
+        .eq('id', updatedProject.id);
 
-    if (error) {
-      console.error('Error updating project:', error);
-      return;
+      if (error) {
+        console.error('Error updating project:', error);
+        return;
+      }
     }
 
     setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
@@ -747,6 +757,7 @@ export default function App() {
     setCurrentView('detail');
 
     // Perform database operations in background
+    if (isDemoMode) return;
     try {
       // 1. Insert Project (Map to DB schema)
       const projectToInsert = {
@@ -850,7 +861,9 @@ export default function App() {
         type: 'accept'
       };
 
-      await supabase.from('activities').insert(newActivity);
+      if (!isDemoMode) {
+        await supabase.from('activities').insert(newActivity);
+      }
 
       setProjectActivities(prev => [{
         id: `temp-${Date.now()}`,
@@ -871,6 +884,13 @@ export default function App() {
   };
 
   const handleRateMember = async (projectId: string, rateeId: string, score: number) => {
+    if (isDemoMode) {
+      setAllRatings(prev => {
+        const filtered = prev.filter(r => !(r.project_id === projectId && r.rater_id === user.id && r.ratee_id === rateeId));
+        return [...filtered, { project_id: projectId, rater_id: user.id, ratee_id: rateeId, score: score, id: `demo-${Date.now()}` }];
+      });
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('project_ratings')
@@ -903,39 +923,35 @@ export default function App() {
     const pid = project ? project.id : 'unknown';
 
     try {
-      // 1. Insert Project Member
-      const { error: memberError } = await supabase
-        .from('project_members')
-        .insert({
-          project_id: pid,
-          member_id: memberId,
-          role: 'participant'
-        });
-
-      if (memberError) {
-        console.error('Error inviting member:', memberError);
-        return;
-      }
-
-      // 2. Fetch member details
-      const { data: mData } = await supabase.from('members').select('name').eq('id', memberId).single();
-      if (mData) {
-        invitedMemberName = mData.name;
-      }
-
       // 3. Insert Activity record in Supabase
-      const newActivityInDB: any = {
-        user_name: user.name,
-        user_avatar: user.avatar,
-        action: '邀请了',
-        target: invitedMemberName || '用户',
-        project_title: projectTitle,
-        project_id: pid,
-        time_text: '刚刚',
-        type: 'invite'
-      };
+      if (!isDemoMode) {
+        // 1. Insert Project Member (Wrap in demo check)
+        const { error: memberError } = await supabase
+          .from('project_members')
+          .insert({
+            project_id: pid,
+            member_id: memberId,
+            role: 'participant'
+          });
 
-      await supabase.from('activities').insert(newActivityInDB);
+        if (memberError) {
+          console.error('Error inviting member:', memberError);
+          return;
+        }
+
+        const newActivityInDB: any = {
+          user_name: user.name,
+          user_avatar: user.avatar,
+          action: '邀请了',
+          target: invitedMemberName || '用户',
+          project_title: projectTitle,
+          project_id: pid,
+          time_text: '刚刚',
+          type: 'invite'
+        };
+
+        await supabase.from('activities').insert(newActivityInDB);
+      }
 
       // 4. Update local activities state
       setProjectActivities(prev => [{
@@ -1019,7 +1035,10 @@ export default function App() {
   };
 
   const handleLeaveProject = async (projectId: string) => {
-    if (!window.confirm('确定要退出此项目吗？')) return;
+    if (isDemoMode) {
+      updateLocalState();
+      return;
+    }
 
     try {
       // 0. Ensure project exists in DB if it's a demo project
@@ -1048,24 +1067,28 @@ export default function App() {
         return;
       }
 
-      // 2. Update local state
-      setAllProjects(prev => prev.map(p => {
-        if ((p.id || (p as any).projectId) === projectId) {
-          return {
-            ...p,
-            role: 'none',
-            members: p.members?.filter((m: any) => m.id !== user.id && m.name !== user.name) || []
-          };
-        }
-        return p;
-      }));
-      setSelectedProjectId(null);
-      setCurrentView('main');
-
-      alert('已成功退出项目');
+      updateLocalState();
     } catch (err) {
       console.error('Leave project failed:', err);
     }
+  };
+
+  const updateLocalState = () => {
+    // 2. Update local state
+    setAllProjects(prev => prev.map(p => {
+      if ((p.id || (p as any).projectId) === projectId) {
+        return {
+          ...p,
+          role: 'none',
+          members: p.members?.filter((m: any) => m.id !== user.id && m.name !== user.name) || []
+        };
+      }
+      return p;
+    }));
+    setSelectedProjectId(null);
+    setCurrentView('main');
+
+    alert('已成功退出项目');
   };
 
   // Mark project as 100% complete and sync to database
@@ -1074,15 +1097,17 @@ export default function App() {
 
     try {
       // 1. Update progress to 100% in Supabase
-      const { error } = await supabase
-        .from('projects')
-        .update({ progress: 100, status: 'done' })
-        .eq('id', projectId);
+      if (!isDemoMode) {
+        const { error } = await supabase
+          .from('projects')
+          .update({ progress: 100, status: 'done' })
+          .eq('id', projectId);
 
-      if (error) {
-        console.error('Error marking project complete:', error);
-        alert('标记失败，请重试');
-        return;
+        if (error) {
+          console.error('Error marking project complete:', error);
+          alert('标记失败，请重试');
+          return;
+        }
       }
 
       // 2. Update local state
@@ -1102,13 +1127,15 @@ export default function App() {
 
     try {
       // 1. Delete from Supabase
-      await supabase.from('activities').delete().eq('project_id', projectId);
-      await supabase.from('project_members').delete().eq('project_id', projectId);
-      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      if (!isDemoMode) {
+        await supabase.from('activities').delete().eq('project_id', projectId);
+        await supabase.from('project_members').delete().eq('project_id', projectId);
+        const { error } = await supabase.from('projects').delete().eq('id', projectId);
 
-      if (error) {
-        console.error('Error deleting project:', error);
-        return;
+        if (error) {
+          console.error('Error deleting project:', error);
+          return;
+        }
       }
 
       // 2. Update local state

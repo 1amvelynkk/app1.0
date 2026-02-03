@@ -22,6 +22,36 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showInviteToast, setShowInviteToast] = useState(false);
 
+  // 年度成就展开状态
+  const [isAchievementsExpanded, setIsAchievementsExpanded] = useState(false);
+
+  // 技能标签状态 - 从用户 tags 初始化
+  const [skillTags, setSkillTags] = useState<string[]>([]);
+  const [newSkillInput, setNewSkillInput] = useState('');
+  const [isAddingSkill, setIsAddingSkill] = useState(false);
+
+  // 从组织数据获取用户的技能标签
+  useMemo(() => {
+    if (user.tags && user.tags.length > 0) {
+      setSkillTags(user.tags);
+    } else if (orgData) {
+      // 从组织结构中查找用户的 tags
+      const findUserTags = (node: Department): string[] | null => {
+        const member = node.members?.find(m => m.id === user.id || m.name === user.name);
+        if (member && member.tags) return member.tags;
+        if (node.children) {
+          for (const child of node.children) {
+            const tags = findUserTags(child);
+            if (tags) return tags;
+          }
+        }
+        return null;
+      };
+      const tags = findUserTags(orgData);
+      if (tags) setSkillTags(tags);
+    }
+  }, [user.id, user.name, user.tags, orgData]);
+
   const handleShare = () => {
     setShowShareToast(true);
     setTimeout(() => setShowShareToast(false), 2000);
@@ -40,12 +70,17 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
     setTimeout(() => setShowInviteToast(false), 2500);
   };
 
-  // Synchronized Project Data from allProjects
+  // Synchronized Project Data from allProjects - 只显示进行中的项目
   const myRealProjects = useMemo(() => {
     return allProjects.filter(p => {
       const isManager = p.manager_id === user.id || p.manager === user.name;
-      const isMember = p.members?.some((m: any) => m.id === user.id || m.name === user.name);
-      return isManager || isMember;
+      // 检查 members 数组（前端数据）
+      const isMemberInMembers = p.members?.some((m: any) => m.id === user.id || m.name === user.name);
+      // 检查 project_members 数组（数据库数据）
+      const isMemberInProjectMembers = p.project_members?.some((m: any) => m.member_id === user.id);
+      const isMember = isMemberInMembers || isMemberInProjectMembers;
+      const isInProgress = p.progress < 100 && p.status !== 'done'; // 只显示进行中的项目
+      return (isManager || isMember) && isInProgress;
     }).map(p => ({
       id: p.id,
       title: p.title,
@@ -55,12 +90,56 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
 
   const displayedProjects = isExpanded ? myRealProjects : myRealProjects.slice(0, 3);
 
+  // 已完成项目用于生成年度成就时间轴
+  const completedProjects = useMemo(() => {
+    return allProjects.filter(p => {
+      const isManager = p.manager_id === user.id || p.manager === user.name;
+      // 检查 members 数组（前端数据）
+      const isMemberInMembers = p.members?.some((m: any) => m.id === user.id || m.name === user.name);
+      // 检查 project_members 数组（数据库数据）
+      const isMemberInProjectMembers = p.project_members?.some((m: any) => m.member_id === user.id);
+      const isMember = isMemberInMembers || isMemberInProjectMembers;
+      const isCompleted = p.progress === 100 || p.status === 'done';
+      return (isManager || isMember) && isCompleted;
+    }).map((p, index) => ({
+      id: p.id,
+      title: p.title,
+      date: p.deadline || '已完成',
+      role: (p.manager_id === user.id || p.manager === user.name) ? '负责人' : '参与者',
+      desc: (p.manager_id === user.id || p.manager === user.name) ? '项目负责人' : '项目参与者'
+    }));
+  }, [allProjects, user.id, user.name]);
+
+  // 显示的成就（3个或全部）
+  const displayedAchievements = isAchievementsExpanded ? completedProjects : completedProjects.slice(0, 3);
+
+  // 添加技能标签
+  const handleAddSkill = () => {
+    if (newSkillInput.trim() && !skillTags.includes(newSkillInput.trim())) {
+      setSkillTags([...skillTags, newSkillInput.trim()]);
+      setNewSkillInput('');
+      setIsAddingSkill(false);
+    }
+  };
+
+  // 删除技能标签
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setSkillTags(skillTags.filter(s => s !== skillToRemove));
+  };
+
   const averageRating = useMemo(() => {
     const myRatings = allRatings.filter(r => r.ratee_id === user.id);
     if (myRatings.length === 0) return 0;
     const sum = myRatings.reduce((acc, curr) => acc + curr.score, 0);
     return (sum / myRatings.length).toFixed(1);
   }, [allRatings, user.id]);
+
+  // 计算负责的项目数量（包含进行中和已完成）
+  const managedProjectsCount = useMemo(() => {
+    return allProjects.filter(p =>
+      p.manager_id === user.id || p.manager === user.name
+    ).length;
+  }, [allProjects, user.id, user.name]);
 
   // Calculate collaboration hours based on participated projects
   const collaborationHours = useMemo(() => {
@@ -271,7 +350,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
 
         {/* Stats Cards - White Boxes */}
         <div className="grid grid-cols-3 gap-3 w-full px-2">
-          <StatBox label="参与项目" value={`${myRealProjects.length}`} />
+          <StatBox label="负责项目" value={`${managedProjectsCount}`} />
           <StatBox label="平均评分" value={averageRating > 0 ? `${averageRating}` : "—"} isRating />
           <StatBox label="协作时长" value={`${collaborationHours.toLocaleString()}h`} />
         </div>
@@ -280,7 +359,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
       {/* Projects List */}
       <div className="px-6 mt-6">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-bold text-slate-900">参与项目</h3>
+          <h3 className="text-base font-bold text-slate-900">进行中项目</h3>
           <span className="text-[#2C097F] text-xs font-bold">共 {myRealProjects.length} 个</span>
         </div>
         <div className="space-y-2">
@@ -290,7 +369,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
               <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${p.role === '负责人' ? 'bg-[#2C097F]/10 text-[#2C097F]' : 'bg-slate-100 text-slate-500'}`}>{p.role}</span>
             </div>
           )) : (
-            <div className="text-center text-gray-400 py-3 text-xs">暂无参与项目</div>
+            <div className="text-center text-gray-400 py-3 text-xs">暂无进行中项目</div>
           )}
 
           {myRealProjects.length > 3 && (
@@ -308,46 +387,104 @@ export const Profile: React.FC<ProfileProps> = ({ user, setUser, readOnly = fals
       <div className="px-6 mt-8">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-base font-bold text-slate-900">年度成就时间轴</h3>
-          <span className="text-[#2C097F] text-xs font-bold">查看全部</span>
+          {completedProjects.length > 3 && (
+            <button
+              onClick={() => setIsAchievementsExpanded(!isAchievementsExpanded)}
+              className="text-[#2C097F] text-xs font-bold"
+            >
+              {isAchievementsExpanded ? '收起' : `查看全部 (${completedProjects.length})`}
+            </button>
+          )}
+          {completedProjects.length <= 3 && completedProjects.length > 0 && (
+            <span className="text-[#2C097F] text-xs font-bold">共 {completedProjects.length} 个</span>
+          )}
         </div>
 
-        <div className="relative pl-4 space-y-8">
-          {/* Timeline Line */}
-          <div className="absolute left-[2.25rem] top-4 bottom-4 w-[2px] bg-indigo-100"></div>
+        {completedProjects.length > 0 ? (
+          <div className="relative pl-4 space-y-6">
+            {/* Timeline Line */}
+            <div className="absolute left-[2.25rem] top-4 bottom-4 w-[2px] bg-indigo-100"></div>
 
-          <TimelineItem
-            icon={<Rocket size={18} className="text-white" />}
-            bgColor="bg-[#6D28D9]"
-            title="Q3 核心系统架构升级"
-            date="2023-10-15"
-            desc="负责整体技术演进路线"
-          />
-          <TimelineItem
-            icon={<ShareIcon size={18} className="text-white" />}
-            bgColor="bg-[#4F46E5]"
-            title="Q2 跨部门数字化转型项目"
-            date="2023-06-20"
-            desc="协调4个业务部门系统对接"
-          />
-          <TimelineItem
-            icon={<Award size={18} className="text-white" />}
-            bgColor="bg-[#7C3AED]"
-            title="Q1 获得年度杰出员工奖"
-            date="2023-01-10"
-            desc="卓越绩效贡献认可"
-          />
-        </div>
+            {displayedAchievements.map((project: any, index: number) => {
+              const colors = ['bg-[#6D28D9]', 'bg-[#4F46E5]', 'bg-[#7C3AED]', 'bg-[#8B5CF6]', 'bg-[#A78BFA]'];
+              const icons = [Rocket, Award, ShareIcon];
+              const IconComponent = icons[index % icons.length];
+
+              return (
+                <TimelineItem
+                  key={project.id}
+                  icon={<IconComponent size={18} className="text-white" />}
+                  bgColor={colors[index % colors.length]}
+                  title={project.title}
+                  date={project.date}
+                  desc={project.desc}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center text-gray-400 py-6 text-xs bg-white rounded-xl border border-gray-100">
+            暂无已完成项目
+          </div>
+        )}
       </div>
 
       <div className="px-6 mt-8 mb-8">
-        <h3 className="text-base font-bold text-slate-900 mb-3">核心技能标签</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-base font-bold text-slate-900">核心技能标签</h3>
+          {!readOnly && (
+            <button
+              onClick={() => setIsAddingSkill(!isAddingSkill)}
+              className="text-[#2C097F] text-xs font-bold flex items-center gap-1"
+            >
+              {isAddingSkill ? <X size={14} /> : <Plus size={14} />}
+              {isAddingSkill ? '取消' : '添加'}
+            </button>
+          )}
+        </div>
+
+        {/* 添加新技能输入框 */}
+        {isAddingSkill && !readOnly && (
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={newSkillInput}
+              onChange={(e) => setNewSkillInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
+              placeholder="输入新技能..."
+              className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-[#2C097F]"
+            />
+            <button
+              onClick={handleAddSkill}
+              className="px-4 py-2 bg-[#2C097F] text-white text-xs font-bold rounded-lg"
+            >
+              添加
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
-          <SkillTag label="系统架构设计" highlight />
-          <SkillTag label="敏捷项目管理" highlight />
-          <SkillTag label="数据分析(Python)" highlight />
-          <SkillTag label="跨部门协作" />
-          <SkillTag label="PRD编写" />
-          <SkillTag label="商业洞察" />
+          {skillTags.length > 0 ? skillTags.map((skill, index) => (
+            <div
+              key={skill}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${index < 3
+                ? 'bg-[#E0E7FF] text-[#2C097F] border border-[#C7D2FE]'
+                : 'bg-[#F1F5F9] text-slate-600 border border-slate-200'
+                }`}
+            >
+              {skill}
+              {!readOnly && (
+                <button
+                  onClick={() => handleRemoveSkill(skill)}
+                  className="hover:text-red-500 transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          )) : (
+            <div className="text-gray-400 text-xs">暂无技能标签</div>
+          )}
         </div>
       </div>
     </div>

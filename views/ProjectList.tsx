@@ -80,8 +80,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     const isMyProject = p.manager === "王可欣" || p.manager_id === 'kexin';
     const isParticipant = p.role === 'participant' || p.members?.some((m: any) => m.id === 'kexin' || m.name === '王可欣');
 
-    // "All" filter should truly show ALL company projects
-    if (activeFilter === 'all') return true;
+    // "进行中" filter should show all projects except completed ones
+    if (activeFilter === 'all') return p.progress < 100 && p.status !== 'done';
 
     // Completed filter: show only 100% progress projects
     if (activeFilter === 'completed') return p.progress === 100;
@@ -143,7 +143,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       <div className="px-4 flex items-center gap-3 mb-3">
         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">筛选</span>
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-          <FilterButton label="全部" active={activeFilter === 'all'} onClick={() => { setActiveFilter('all'); onFilterChange?.('all'); }} />
+          <FilterButton label="进行中" active={activeFilter === 'all'} onClick={() => { setActiveFilter('all'); onFilterChange?.('all'); }} />
           <FilterButton label="已完成" active={activeFilter === 'completed'} onClick={() => { setActiveFilter('completed'); onFilterChange?.('completed'); }} completed />
           <FilterButton label="我负责的" active={activeFilter === 'my'} onClick={() => { setActiveFilter('my'); onFilterChange?.('my'); }} />
           <FilterButton label="我参与的" active={activeFilter === 'participated'} onClick={() => { setActiveFilter('participated'); onFilterChange?.('participated'); }} />

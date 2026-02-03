@@ -21,6 +21,7 @@ interface ProjectDetailProps {
   onLeaveProject: (projectId: string) => void;
   onRateMember: (projectId: string, memberId: string, score: number) => void;
   onMarkComplete?: (projectId: string) => void;
+  currentUser?: any;
 }
 
 export default function ProjectDetail({
@@ -38,7 +39,8 @@ export default function ProjectDetail({
   onDeleteProject,
   onLeaveProject,
   onRateMember,
-  onMarkComplete
+  onMarkComplete,
+  currentUser
 }: ProjectDetailProps) {
   const [showToast, setShowToast] = useState(false);
   const [toastType, setToastType] = useState<'remind' | 'invite' | 'upload' | 'rating'>('remind');
@@ -55,7 +57,8 @@ export default function ProjectDetail({
 
   const isFollowed = followedProjectIds.includes(projectId || '');
 
-  const currentUser = "王可欣";
+  // 使用从 props 传入的 currentUser，如果没有则默认为 "王可欣"
+  const currentUserName = currentUser?.name || "王可欣";
 
   // Find the project from global list
   const foundProject = allProjects.find(p => p.id === projectId);
@@ -102,7 +105,9 @@ export default function ProjectDetail({
   const filteredMembers = allMembers.filter(m => {
     const matchesName = m.name.toLowerCase().includes(memberSearchQuery.toLowerCase());
     const matchesDept = selectedDeptFilter === '全部' || m.dept === selectedDeptFilter;
-    return matchesName && matchesDept;
+    // 排除当前用户自己
+    const isNotSelf = currentUser ? (m.id !== currentUser.id && m.name !== currentUser.name) : true;
+    return matchesName && matchesDept && isNotSelf;
   });
 
   // Default Template Data for Demo Projects to ensure visual richness
@@ -120,7 +125,7 @@ export default function ProjectDetail({
       (foundProject?.status === 'delayed' ? '紧急' :
         (foundProject?.status === 'normal' ? '正常' : '进行中')),
     department: foundProject?.department || "其他部门",
-    manager: foundProject?.manager || "未知负责人",
+    manager: foundProject?.manager || (foundProject?.manager_id === 'kexin' ? '王可欣' : foundProject?.manager_id) || "未知负责人",
     progress: foundProject?.progress || 0,
     deadline: foundProject?.deadline || "TBD",
     image: `https://picsum.photos/seed/${projectId}/200`,
@@ -183,9 +188,10 @@ export default function ProjectDetail({
     ];
   }, [foundProject]);
 
-  const isManager = data.manager === currentUser;
+  const isManager = data.manager === currentUserName;
+  const isParticipant = foundProject?.role === 'participant';
   const isCompleted = data.progress === 100; // Completed projects have restrictions
-  const isPhaseResponsible = activeMilestone?.responsible === currentUser;
+  const isPhaseResponsible = activeMilestone?.responsible === currentUserName;
 
   let buttonConfig = {
     label: "提交审核材料",
@@ -407,7 +413,7 @@ export default function ProjectDetail({
           </button>
         )}
 
-        {!isManager && projectId && (
+        {isParticipant && projectId && (
           <button
             onClick={() => onLeaveProject(projectId)}
             className="px-2 py-1 bg-gray-500/10 text-gray-500 rounded-lg hover:bg-gray-500/20 transition-colors ml-1.5 text-[10px] font-bold"

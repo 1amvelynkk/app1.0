@@ -255,3 +255,34 @@ INSERT INTO project_materials (project_id, uploader_id, milestone, file_name, fi
 ('ui-design', 'm3', '第二阶段：广告投放与创意测试', 'UI设计稿v2.pdf', 'https://example.com/files/ui-v2.pdf', 'pdf'),
 ('crm-v2', 'm4', '功能测试', 'API接口文档.docx', 'https://example.com/files/api-doc.docx', 'docx');
 
+-- ==========================================
+-- 12. 修复未知负责人项目 (Fix Unknown Managers)
+-- ==========================================
+-- 将所有没有负责人的项目设置为王可欣(kexin)
+
+UPDATE projects 
+SET 
+  manager = '王可欣',
+  manager_id = 'kexin'
+WHERE 
+  manager_id IS NULL 
+  OR manager_id = ''
+  OR manager IS NULL
+  OR manager = '' 
+  OR manager = '未知'
+  OR manager = '未知负责人';
+
+-- 确保 project_members 表中有对应的管理员记录
+INSERT INTO project_members (project_id, member_id, role)
+SELECT id, 'kexin', 'manager'
+FROM projects 
+WHERE manager_id = 'kexin'
+  AND id NOT IN (
+    SELECT project_id FROM project_members 
+    WHERE member_id = 'kexin' AND role = 'manager'
+  )
+ON CONFLICT (project_id, member_id) DO UPDATE SET role = 'manager';
+
+-- ==========================================
+-- 完成! 数据库已初始化并修复
+-- ==========================================

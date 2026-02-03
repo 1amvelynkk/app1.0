@@ -72,9 +72,11 @@ const initialOrgData: Department = {
       id: 'product',
       name: '产品设计中心',
       enName: 'Product & Design',
-      count: '3人',
+      count: '1人',
       level: 1,
-      members: [],
+      members: [
+        { id: 'kexin', name: "王可欣", role: "高级产品经理", title: "高级产品经理", dept: "产品设计中心", projectCount: 8, status: "online", tags: ['产品规划', '需求分析', '用户体验', '项目管理', '数据驱动'], avatar: "https://picsum.photos/seed/kexin/200", joinDays: 1240, projects: [] }
+      ],
       children: [
         {
           id: 'design',
@@ -345,17 +347,52 @@ export default function App() {
     name: "王可欣",
     id: "kexin", // Added ID
     title: "高级产品经理",
-    dept: "研发中心",
+    dept: "产品设计中心",
     avatar: "https://picsum.photos/seed/kexin/200",
     joinDays: 1240,
+    tags: ['产品规划', '需求分析', '用户体验', '项目管理', '数据驱动'],
     projects: [] as any[]
   });
+
+  // 当用户部门或职位变化时，同步更新组织结构
+  useEffect(() => {
+    const updateUserInOrg = (node: Department): Department => {
+      // 从当前部门移除用户
+      const filteredMembers = node.members.filter(m => m.id !== user.id);
+
+      // 如果这是用户的新部门，添加用户
+      const isUserDept = node.name === user.dept;
+      const newMembers = isUserDept
+        ? [...filteredMembers, {
+          id: user.id,
+          name: user.name,
+          role: user.title,
+          title: user.title,
+          dept: user.dept,
+          projectCount: 8,
+          status: 'online' as const,
+          tags: user.tags || [],
+          avatar: user.avatar,
+          joinDays: user.joinDays,
+          projects: user.projects || []
+        }]
+        : filteredMembers;
+
+      return {
+        ...node,
+        members: newMembers,
+        children: node.children?.map(child => updateUserInOrg(child))
+      };
+    };
+
+    setOrgData(prev => updateUserInOrg(prev));
+  }, [user.dept, user.title, user.name]);
 
   // Fetch Initial Data from Supabase
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Projects
+        // Fetch Projects with member details
         const { data: projectsData } = await supabase
           .from('projects')
           .select(`
@@ -368,17 +405,55 @@ export default function App() {
           .order('created_at', { ascending: false });
 
         if (projectsData) {
-          const dbProjects = projectsData.map((p: any) => ({
-            ...p,
-            hasPermission: true,
-            role: p.project_members?.find((m: any) => m.member_id === user.id)?.role || 'none'
-          }));
+          // 从 orgData 获取所有成员用于查找成员详情
+          const getAllMembersFromOrg = (node: any): any[] => {
+            let allMembers: any[] = [...(node.members || [])];
+            if (node.children) {
+              for (const child of node.children) {
+                allMembers = [...allMembers, ...getAllMembersFromOrg(child)];
+              }
+            }
+            return allMembers;
+          };
+          const allOrgMembers = getAllMembersFromOrg(orgData);
+          const memberMap = new Map(allOrgMembers.map(m => [m.id, m]));
+
+          const dbProjects = projectsData.map((p: any) => {
+            // Check if user is the project manager (by manager_id)
+            const isProjectManager = p.manager_id === user.id;
+            // Also check project_members table
+            const memberRole = p.project_members?.find((m: any) => m.member_id === user.id)?.role;
+
+            // 转换 project_members 为前端需要的 members 格式
+            // 优先使用 orgData 中的成员信息，否则使用 member_id
+            const members = p.project_members?.map((pm: any) => {
+              const orgMember = memberMap.get(pm.member_id);
+              return {
+                id: pm.member_id,
+                name: orgMember?.name || pm.member_id,
+                avatar: orgMember?.avatar || `https://picsum.photos/seed/${pm.member_id}/100`,
+                dept: orgMember?.dept || '',
+                title: orgMember?.title || orgMember?.role || '',
+                role: pm.role
+              };
+            }) || [];
+
+            return {
+              ...p,
+              hasPermission: isProjectManager || memberRole === 'manager' || memberRole === 'participant',
+              role: isProjectManager ? 'manager' : (memberRole || 'none'),
+              members: members
+            };
+          });
+
+          // Database is the source of truth - only show projects that exist in DB
+          const dbProjectIds = new Set(dbProjects.map((p: any) => p.id));
 
           setAllProjects(prev => {
             const dbProjectMap = new Map(dbProjects.map(p => [p.id, p]));
 
-            // Update hardcoded projects with DB values if they exist in database
-            const mergedHardcoded = prev.filter(p => !p.created_at).map(localProject => {
+            // ONLY keep hardcoded projects if they ALSO exist in database (not deleted)
+            const mergedHardcoded = prev.filter(p => !p.created_at && dbProjectIds.has(p.id)).map(localProject => {
               const dbVersion = dbProjectMap.get(localProject.id);
               if (dbVersion) {
                 // Merge DB values (progress, status, role) into local project to persist changes
@@ -391,6 +466,8 @@ export default function App() {
                   progress: dbVersion.progress,
                   status: dbVersion.status,
                   role: dbVersion.role, // PERSIST PERMANENT LEAVE
+                  manager: dbVersion.manager || localProject.manager, // Sync manager from DB
+                  manager_id: dbVersion.manager_id || localProject.manager_id,
                   members: updatedMembers
                 };
               }
@@ -621,7 +698,7 @@ export default function App() {
     setViewingUser(targetUser);
     setPreviousNavState({
       tab: currentTab,
-      view: currentView === 'notifications' ? 'notifications' : 'organization'
+      view: currentView // 保存当前视图，包括 'detail'
     });
     setCurrentView('user-profile');
   };
@@ -643,10 +720,12 @@ export default function App() {
       }
 
       if (currentView === 'user-profile') {
-        if (previousNavState.view === 'organization') {
-          setCurrentView('main');
+        if (previousNavState.view === 'detail') {
+          setCurrentView('detail');
+        } else if (previousNavState.view === 'notifications') {
+          setCurrentView('notifications');
         } else {
-          setCurrentView(previousNavState.view);
+          setCurrentView('main');
         }
         setViewingUser(null);
         return;
@@ -763,7 +842,8 @@ export default function App() {
       const projectToInsert = {
         id: newProject.id,
         title: newProject.title,
-        manager_id: user.id, // DB expects manager_id
+        manager: user.name, // Display name for UI
+        manager_id: user.id, // DB foreign key for permissions
         department: newProject.department,
         progress: newProject.progress,
         status: newProject.status,
@@ -1169,6 +1249,7 @@ export default function App() {
           allRatings={allRatings}
           followedProjectIds={followedProjectIds}
           allProjects={allProjects}
+          currentUser={user}
         />
       );
     }

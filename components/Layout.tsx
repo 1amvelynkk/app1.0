@@ -8,11 +8,17 @@ interface LayoutProps {
   currentTab: Tab;
   onTabChange: (tab: Tab) => void;
   hideBottomNav?: boolean;
+  isDemoMode?: boolean;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, currentTab, onTabChange, hideBottomNav }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, currentTab, onTabChange, hideBottomNav, isDemoMode }) => {
   return (
     <div className="flex flex-col h-screen w-full bg-[#F6F6F8] overflow-hidden relative shadow-2xl font-inter">
+      {isDemoMode && (
+        <div className="bg-amber-500 text-white text-[10px] py-1 text-center font-bold z-[100] shadow-sm animate-pulse-subtle">
+          演示模式：您的更改不会保存到数据库，刷新后将重置
+        </div>
+      )}
       <main className="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
         {children}
       </main>

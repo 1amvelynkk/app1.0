@@ -785,23 +785,26 @@ export default function App() {
   };
 
   const handleUpdateProject = async (updatedProject: any) => {
-    if (!isDemoMode) {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          title: updatedProject.title,
-          progress: updatedProject.progress,
-          status: updatedProject.status,
-          deadline: updatedProject.deadline,
-          description: updatedProject.description,
-          visibility: updatedProject.visibility
-        })
-        .eq('id', updatedProject.id);
+    if (isDemoMode) {
+      setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+      return;
+    }
 
-      if (error) {
-        console.error('Error updating project:', error);
-        return;
-      }
+    const { error } = await supabase
+      .from('projects')
+      .update({
+        title: updatedProject.title,
+        progress: updatedProject.progress,
+        status: updatedProject.status,
+        deadline: updatedProject.deadline,
+        description: updatedProject.description,
+        visibility: updatedProject.visibility
+      })
+      .eq('id', updatedProject.id);
+
+    if (error) {
+      console.error('Error updating project:', error);
+      return;
     }
 
     setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
@@ -1200,6 +1203,9 @@ export default function App() {
         p.id === projectId ? { ...p, progress: 100, status: 'done' } : p
       ));
 
+      if (isDemoMode) {
+        console.log('Demo mode: project mark complete (local only)');
+      }
       alert('项目已标记为完成！');
     } catch (err) {
       console.error('Mark complete failed:', err);
@@ -1219,6 +1225,7 @@ export default function App() {
 
         if (error) {
           console.error('Error deleting project:', error);
+          alert('删除失败，请重试');
           return;
         }
       }
@@ -1229,9 +1236,13 @@ export default function App() {
       setSelectedProjectId(null);
       setCurrentView('main');
 
+      if (isDemoMode) {
+        console.log('Demo mode: project deleted (local only)');
+      }
       alert('项目及相关动态已成功删除');
     } catch (err) {
       console.error('Delete flow failed:', err);
+      alert('删除失败');
     }
   };
 
@@ -1388,6 +1399,7 @@ export default function App() {
         setCurrentView('main');
       }}
       hideBottomNav={currentView !== 'main' && currentTab !== Tab.AI}
+      isDemoMode={isDemoMode}
     >
       {renderContent()}
     </Layout>

@@ -457,9 +457,11 @@ export default function App() {
               const dbVersion = dbProjectMap.get(localProject.id);
               if (dbVersion) {
                 // Merge DB values (progress, status, role) into local project to persist changes
+                // 优先使用数据库的成员列表，而不是硬编码的成员
+                const dbMembers = dbVersion.members || [];
                 const updatedMembers = dbVersion.role === 'none'
-                  ? (localProject.members?.filter((m: any) => m.id !== user.id && m.name !== user.name) || [])
-                  : localProject.members;
+                  ? dbMembers.filter((m: any) => m.id !== user.id && m.name !== user.name)
+                  : dbMembers;
 
                 return {
                   ...localProject,
@@ -468,7 +470,7 @@ export default function App() {
                   role: dbVersion.role, // PERSIST PERMANENT LEAVE
                   manager: dbVersion.manager || localProject.manager, // Sync manager from DB
                   manager_id: dbVersion.manager_id || localProject.manager_id,
-                  members: updatedMembers
+                  members: updatedMembers.length > 0 ? updatedMembers : localProject.members // 如果数据库没有成员，才使用硬编码的
                 };
               }
               return localProject;
@@ -874,7 +876,10 @@ export default function App() {
         role: 'manager'
       });
 
-      await supabase.from('project_members').insert(memberInserts);
+      const { error: membersError } = await supabase.from('project_members').insert(memberInserts);
+      if (membersError) {
+        console.error('Error inserting project members:', membersError);
+      }
 
       // 3. Insert Activities (Invitation + Creation)
       const creationActivity = {

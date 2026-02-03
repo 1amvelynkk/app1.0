@@ -23,13 +23,10 @@ export const CreateProject: React.FC<CreateProjectProps> = ({ onBack, orgData, o
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('全部');
 
-  // Use prefilledMembers if provided, otherwise use default members
-  const defaultMembers = [
-    { id: 'li', name: '李工 (Li)', role: '高级架构师', dept: '技术部', avatar: 'https://picsum.photos/seed/li/50', status: '空闲', load: '20%' },
-    { id: 'zhang', name: '张欣 (Zhang)', role: '资深设计', dept: '创意部', avatar: 'https://picsum.photos/seed/zhang/50', status: '繁忙', load: '95%' }
-  ];
+  // Use prefilledMembers if provided, otherwise start with empty array
+  // Note: 不使用硬编码的默认成员，因为它们的 ID 在数据库中不存在，会导致外键约束失败
   const [selectedMembers, setSelectedMembers] = useState<any[]>(
-    prefilledMembers && prefilledMembers.length > 0 ? prefilledMembers : defaultMembers
+    prefilledMembers && prefilledMembers.length > 0 ? prefilledMembers : []
   );
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState("");

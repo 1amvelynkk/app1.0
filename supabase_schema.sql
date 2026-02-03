@@ -133,16 +133,49 @@ INSERT INTO departments (id, name, en_name, count_text, level, parent_id) VALUES
 ('marketing', '市场营销部', 'Marketing', '20人', 1, 'root'),
 ('hardware', '硬件部', 'Hardware', '30人', 1, 'rnd');
 
--- Members (Including 'kexin' and others needed for manager references)
+-- Members (与前端 orgData 完全同步)
 INSERT INTO members (id, name, role, title, dept_id, project_count, status, tags, avatar, join_days) VALUES
+-- 产品设计中心
 ('kexin', '王可欣', '高级产品经理', '高级产品经理', 'product', 8, 'online', '{"Product", "UI"}', 'https://picsum.photos/seed/kexin/200', 1240),
+
+-- 前端开发部
 ('m1', '林木风', '资深前端专家', '资深前端专家', 'frontend', 3, 'online', '{"Vue", "React", "Arco"}', 'https://picsum.photos/seed/lin/100', 800),
 ('m2', '陈雪依', '中级开发工程师', '中级开发工程师', 'frontend', 1, 'offline', '{"React", "Tailwind"}', 'https://picsum.photos/seed/chen/100', 300),
 ('m3', '张宏伟', '前端团队负责人', '前端团队负责人', 'frontend', 5, 'busy', '{"Management", "Architecture"}', 'https://picsum.photos/seed/zhanghw/100', 1500),
-('m4', '张大千', '技术总监', '技术总监', 'backend', 4, 'online', '{"Backend", "Go"}', 'https://picsum.photos/seed/zhang/100', 2000),
+
+-- 后端开发部
+('m4', '李思', 'Java 专家', 'Java 专家', 'backend', 4, 'online', '{"Java", "Spring"}', 'https://picsum.photos/seed/lisi_be/100', 600),
+('m5', '王五', 'Go 开发', 'Go 开发', 'backend', 2, 'busy', '{"Go", "K8s"}', 'https://picsum.photos/seed/wangwu/100', 450),
+('m5-1', '赵六', '架构师', '系统架构师', 'backend', 6, 'online', '{"Microservices"}', 'https://picsum.photos/seed/zhaoliu/100', 1200),
+
+-- AI 实验室
+('ai1', 'Dr. Wu', 'AI 科学家', '首席科学家', 'ai-lab', 2, 'online', '{"LLM", "Python"}', 'https://picsum.photos/seed/drwu/100', 200),
+('ai2', 'Alex', '算法工程师', '算法工程师', 'ai-lab', 4, 'busy', '{"PyTorch"}', 'https://picsum.photos/seed/alex/100', 400),
+('ai3', 'Sarah', '数据分析师', '数据分析师', 'ai-lab', 1, 'offline', '{"Data Mining"}', 'https://picsum.photos/seed/sarah/100', 150),
+
+-- UI 设计部
+('m6', '张欣', 'UI 设计师', 'UI 设计师', 'design', 3, 'online', '{"Figma", "Sketch"}', 'https://picsum.photos/seed/zhangxin/100', 700),
+('m7', 'Kiki', '交互设计师', '交互设计师', 'design', 2, 'busy', '{"UX", "Protopie"}', 'https://picsum.photos/seed/kiki/100', 500),
+('m8', 'Leo', '视觉专家', '视觉专家', 'design', 4, 'online', '{"C4D", "Blender"}', 'https://picsum.photos/seed/leo/100', 900),
+
+-- 人力资源部
+('hr1', 'HRD', '人力总监', '人力总监', 'hr', 2, 'busy', '{"Recruitment"}', 'https://picsum.photos/seed/hrd/100', 2000),
+('hr2', 'Amy', '招聘经理', '招聘经理', 'hr', 5, 'online', '{"Hiring"}', 'https://picsum.photos/seed/amy/100', 600),
+('hr3', 'Ben', '薪酬专员', '薪酬专员', 'hr', 1, 'offline', '{"C&B"}', 'https://picsum.photos/seed/ben/100', 300),
+
+-- 行政部
+('adm1', '行政小李', '行政主管', '行政主管', 'admin-dept', 10, 'online', '{"Event"}', 'https://picsum.photos/seed/adm1/100', 800),
+('adm2', 'Tom', '资产管理', '资产管理', 'admin-dept', 2, 'offline', '{"Assets"}', 'https://picsum.photos/seed/tom/100', 400),
+('adm3', 'Jerry', '前台接待', '前台接待', 'admin-dept', 0, 'online', '{"Service"}', 'https://picsum.photos/seed/jerry/100', 100),
+
+-- 财务部
 ('m_zhao', '赵会计', '财务主管', '财务主管', 'finance', 2, 'busy', '{"Finance"}', 'https://picsum.photos/seed/zhao/100', 500),
-('m_li', '李思思', '市场总监', '市场总监', 'marketing', 3, 'online', '{"Marketing"}', 'https://picsum.photos/seed/lisi/100', 600),
 ('m_wang_jl', '王经理', '财务经理', '财务经理', 'finance', 2, 'online', '{"Finance", "Audit"}', 'https://picsum.photos/seed/wangjl/100', 800),
+
+-- 市场营销部
+('m_li', '李思思', '市场总监', '市场总监', 'marketing', 3, 'online', '{"Marketing"}', 'https://picsum.photos/seed/lisi/100', 600),
+
+-- 法务部
 ('m_li_ls', '李律师', '法务顾问', '法务顾问', 'admin', 1, 'online', '{"Legal", "Compliance"}', 'https://picsum.photos/seed/lils/100', 600);
 
 

@@ -175,17 +175,10 @@ export default function ProjectDetail({
 
   const activeMilestone = data.milestones.find((m: any) => m.status === 'active') || data.milestones[data.milestones.length - 1];
 
-  // Use real members from project if they exist, otherwise use some meaningful fallbacks
+  // Use real members from project if they exist
   const displayMembers = useMemo(() => {
-    if (foundProject?.members && foundProject.members.length > 0) {
-      return foundProject.members;
-    }
-    // Fallback for demo projects
-    return [
-      { id: 'kexin', name: '王可欣', avatar: 'https://picsum.photos/seed/kexin/200', dept: '产品部' },
-      { id: 'zhangsan', name: '张三', avatar: 'https://picsum.photos/seed/zs/200', dept: '研发部' },
-      { id: 'lisi', name: '李四', avatar: 'https://picsum.photos/seed/ls/200', dept: '设计部' }
-    ];
+    // 直接使用项目的真实成员列表，不再使用硬编码的 fallback
+    return foundProject?.members || [];
   }, [foundProject]);
 
   const isManager = data.manager === currentUserName;
@@ -515,7 +508,14 @@ export default function ProjectDetail({
                 <div key={i} className="flex items-center justify-between bg-white/5 p-2.5 rounded-xl border border-white/5">
                   <div
                     className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity min-w-0 flex-1"
-                    onClick={() => onViewProfile(m)}
+                    onClick={() => {
+                      // 从 allMembers 中查找完整的成员信息（包含 tags）
+                      const fullMember = allMembers.find(member => member.id === m.id) || m;
+                      onViewProfile({
+                        ...m,
+                        tags: fullMember.tags || m.tags || []
+                      });
+                    }}
                   >
                     <img src={m.avatar} className="w-7 h-7 rounded-full object-cover ring-2 ring-transparent hover:ring-[#2C097F] transition-all shrink-0" alt="" />
                     <div className="min-w-0">

@@ -9,9 +9,36 @@ import { Profile } from './views/Profile';
 import ProjectDetail from './views/ProjectDetail';
 import { CreateProject } from './views/CreateProject';
 import { Notifications } from './views/Notifications';
-import { Tab, Department, Member, ProjectActivity, Project, ProjectRating } from './types';
+import { Tab, Department, Member, ProjectActivity, Project, ProjectRating, AIMessage } from './types';
 import { supabase } from './lib/supabaseClient';
 import { aiService } from './lib/aiService';
+
+const initialAIChatMessages: AIMessage[] = [
+  {
+    role: 'model',
+    type: 'text',
+    isExample: true,
+    text: "您好，我是您的协作助手。我可以帮您：\n• **推荐专家** ：根据业务需求匹配内部资深员工\n• **跨部门对接** ：协调资源，打破沟通壁垒"
+  },
+  {
+    role: 'user',
+    type: 'text',
+    isExample: true,
+    text: "我正在处理年度审计，需要一位熟悉海外业务财务流程的专家协助，并对接法务部进行合规初审。"
+  },
+  {
+    role: 'model',
+    type: 'recommendation',
+    isExample: true,
+    data: {
+      title: "已为您匹配到最合适的协作资源：",
+      experts: [
+        { name: "财务部·王经理", desc: "擅长：跨国审计、外汇结算。曾主导2023年欧洲区审计。" },
+        { name: "法务部·李律师", desc: "擅长：跨境合规、项目风控。" }
+      ]
+    }
+  }
+];
 
 // Initial Data Construction
 const initialOrgData: Department = {
@@ -343,6 +370,7 @@ export default function App() {
   const [followedProjectIds, setFollowedProjectIds] = useState<string[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>(initialProjects);
   const [allRatings, setAllRatings] = useState<ProjectRating[]>([]);
+  const [aiChatMessages, setAiChatMessages] = useState<AIMessage[]>(initialAIChatMessages);
   const [user, setUser] = useState({
     name: "王可欣",
     id: "kexin", // Added ID
@@ -1348,6 +1376,9 @@ export default function App() {
               }
             }}
             orgData={orgData}
+            allProjects={allProjects}
+            messages={aiChatMessages}
+            setMessages={setAiChatMessages}
           />
         );
       case Tab.Project:

@@ -93,3 +93,8 @@ export interface ProjectRating {
   comment?: string;
   created_at: string;
 }
+
+export type AIMessage =
+  | { role: 'user', text: string, type: 'text', isExample?: boolean }
+  | { role: 'model', text: string, type: 'text', isExample?: boolean }
+  | { role: 'model', type: 'recommendation', data: any, isExample?: boolean };

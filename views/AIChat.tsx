@@ -2,47 +2,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, MoreHorizontal, Send, Plus, Search, GitPullRequest, Users, HelpCircle, Bot, ExternalLink } from 'lucide-react';
 import { aiService } from '../lib/aiService';
-import { Department } from '../types';
+import { Department, AIMessage } from '../types';
 
 interface AIChatProps {
   onNavigateToNotifications: () => void;
   onSwitchToOrg: () => void;
   onCreateProject?: (prefilledMembers?: any[]) => void;
   orgData?: Department;
+  allProjects?: any[];
+  messages: AIMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<AIMessage[]>>;
 }
 
-// Message Type Definition
-type Message =
-  | { role: 'user', text: string, type: 'text' }
-  | { role: 'model', text: string, type: 'text' }
-  | { role: 'model', type: 'recommendation', data: any };
-
-export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwitchToOrg, onCreateProject, orgData }) => {
-  // Exact initial state from the screenshot
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'model',
-      type: 'text',
-      text: "您好，我是您的协作助手。我可以帮您：\n• **推荐专家** ：根据业务需求匹配内部资深员工\n• **跨部门对接** ：协调资源，打破沟通壁垒"
-    },
-    {
-      role: 'user',
-      type: 'text',
-      text: "我正在处理年度审计，需要一位熟悉海外业务财务流程的专家协助，并对接法务部进行合规初审。"
-    },
-    {
-      role: 'model',
-      type: 'recommendation',
-      data: {
-        title: "已为您匹配到最合适的协作资源：",
-        experts: [
-          { name: "财务部·王经理", desc: "擅长：跨国审计、外汇结算。曾主导2023年欧洲区审计。" },
-          { name: "法务部·李律师", desc: "擅长：跨境合规、项目风控。" }
-        ]
-      }
-    }
-  ]);
-
+export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwitchToOrg, onCreateProject, orgData, allProjects, messages, setMessages }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -84,6 +56,40 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
     }
   };
 
+  // Handle 查找技术专家 - AI search for technical experts
+  const handleSearchExpert = async () => {
+    if (isLoading) return;
+
+    setMessages(prev => [...prev, { role: 'user', text: '查找技术专家', type: 'text' }]);
+    setIsLoading(true);
+
+    try {
+      // Flatten members for context
+      const getAllMembers = (node: Department): any[] => {
+        let list = [...(node.members || [])];
+        node.children?.forEach(child => { list = [...list, ...getAllMembers(child)]; });
+        return list;
+      };
+      const allMembers = orgData ? getAllMembers(orgData) : [];
+
+      const responseText = await aiService.chatWithAI(
+        `请从当前的组织架构中，识别并推荐2-3位具备技术专长或资深经验的成员（如工程师、专家、负责人等）。
+        要求：
+        1. 必须使用提供的【组织成员信息】中的真实姓名和职能。
+        2. 严禁虚构。
+        3. 请简洁地列出这些专家的名字、部门及推荐理由。`,
+        messages.filter(m => m.type === 'text').map(m => ({ role: m.role, text: (m as any).text })),
+        { members: allMembers, projects: allProjects }
+      );
+
+      setMessages(prev => [...prev, { role: 'model', text: responseText, type: 'text' }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'model', text: "抱歉，技术专家查找失败。", type: 'text' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle 获取合规模板 - Open Google search
   const handleSearchTemplates = () => {
     const searchQuery = encodeURIComponent('合规模板 审计 财务流程');
@@ -98,25 +104,28 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
     setIsLoading(true);
 
     try {
-      // Get all departments from orgData
-      const departments: string[] = [];
-      const collectDepts = (node: Department) => {
-        if (node.members && node.members.length > 0) {
-          departments.push(node.name);
-        }
-        node.children?.forEach(collectDepts);
+      // Flatten members for context
+      const getAllMembers = (node: Department): any[] => {
+        let list = [...(node.members || [])];
+        node.children?.forEach(child => { list = [...list, ...getAllMembers(child)]; });
+        return list;
       };
-      if (orgData) collectDepts(orgData);
+      const allMembers = orgData ? getAllMembers(orgData) : [];
 
       const responseText = await aiService.chatWithAI(
-        `请根据用户之前的对话需求，推荐3位来自不同部门的协作成员。可用部门有：${departments.join('、')}。请按照以下格式返回：
-        1. [部门名]·[成员姓名]
-           专长：[具体技能]
-        2. [部门名]·[成员姓名]
-           专长：[具体技能]
-        3. [部门名]·[成员姓名]
-           专长：[具体技能]`,
-        messages.filter(m => m.type === 'text').map(m => ({ role: m.role, text: (m as any).text }))
+        `请分析当前的组织架构，从已有的真实员工中推荐3位来自不同部门的协作成员。
+        要求：
+        1. 必须使用提供的【组织成员信息】中的真实姓名和部门。
+        2. 严禁虚构不存在的人名或部门。
+        3. 请按照以下格式返回：
+           1. [部门名]·[成员姓名]
+              专长：[基于其职位的具体技能]
+           2. [部门名]·[成员姓名]
+              专长：[基于其职位的具体技能]
+           3. [部门名]·[成员姓名]
+              专长：[基于其职位的具体技能]`,
+        messages.filter(m => m.type === 'text').map(m => ({ role: m.role, text: (m as any).text })),
+        { members: allMembers, projects: allProjects }
       );
 
       setMessages(prev => [...prev, { role: 'model', text: responseText, type: 'text' }]);
@@ -140,13 +149,26 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
     setIsLoading(true);
 
     try {
+      // Flatten members for context
+      const getAllMembers = (node: Department): any[] => {
+        let list = [...(node.members || [])];
+        node.children?.forEach(child => { list = [...list, ...getAllMembers(child)]; });
+        return list;
+      };
+      const allMembers = orgData ? getAllMembers(orgData) : [];
+
       // Prepare history for AI
       const history = messages.map(m => ({
         role: m.role,
         text: m.role === 'model' && m.type === 'text' ? m.text : (m.type === 'recommendation' ? '我已为您提供了一些推荐协作资源。' : (m as any).text || '')
       }));
 
-      const responseText = await aiService.chatWithAI(userMessage, history);
+      const context = {
+        members: allMembers,
+        projects: allProjects
+      };
+
+      const responseText = await aiService.chatWithAI(userMessage, history, context);
       setMessages(prev => [...prev, { role: 'model', text: responseText, type: 'text' }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'model', text: "抱歉，网络连接似乎有问题。", type: 'text' }]);
@@ -162,7 +184,7 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
     }
   };
 
-  const renderMessageContent = (msg: Message) => {
+  const renderMessageContent = (msg: AIMessage) => {
     if (msg.type === 'text') {
       // Simple formatting for bold text
       const parts = msg.text.split(/(\*\*.*?\*\*)/g);
@@ -249,6 +271,11 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
               : 'bg-white text-slate-800 rounded-tl-none border border-gray-100'
               }`}>
               {renderMessageContent(msg)}
+              {msg.isExample && index === 2 && (
+                <div className="mt-2 pt-2 border-t border-gray-50 text-[10px] text-gray-400 font-medium italic text-right">
+                  以上为示例对话
+                </div>
+              )}
             </div>
 
             {msg.role === 'user' && (
@@ -280,7 +307,7 @@ export const AIChat: React.FC<AIChatProps> = ({ onNavigateToNotifications, onSwi
           <Chip
             icon={<Search size={12} className="text-[#2C097F]" />}
             label="查找技术专家"
-            onClick={onSwitchToOrg}
+            onClick={handleSearchExpert}
           />
           <Chip
             icon={<GitPullRequest size={12} className="text-[#2C097F]" />}

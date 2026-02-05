@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { ChevronLeft, MoreHorizontal, Bell, Clock, AlertCircle, Check, Plus, PenTool, Layout, FileImage, FileText, CheckCircle2, Lock, ListChecks, X, Search, Filter, Users, Sparkles, Bookmark, Star, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Bell, Clock, AlertCircle, Check, Plus, PenTool, Layout, FileImage, FileText, CheckCircle2, Lock, ListChecks, X, Search, Filter, Users, Sparkles, Bookmark, Star, ThumbsUp, ThumbsDown, Eye, EyeOff } from 'lucide-react';
 import { Department, Member, Project, ProjectRating } from '../types';
 import { aiService } from '../lib/aiService';
 import { supabase } from '../lib/supabaseClient';
@@ -21,6 +21,7 @@ interface ProjectDetailProps {
   onLeaveProject: (projectId: string) => void;
   onRateMember: (projectId: string, memberId: string, score: number) => void;
   onMarkComplete?: (projectId: string) => void;
+  onUpdateProject?: (project: any) => void;
   currentUser?: any;
 }
 
@@ -40,6 +41,7 @@ export default function ProjectDetail({
   onLeaveProject,
   onRateMember,
   onMarkComplete,
+  onUpdateProject,
   currentUser
 }: ProjectDetailProps) {
   const [showToast, setShowToast] = useState(false);
@@ -128,6 +130,7 @@ export default function ProjectDetail({
     manager: foundProject?.manager || (foundProject?.manager_id === 'kexin' ? '王可欣' : foundProject?.manager_id) || "未知负责人",
     progress: foundProject?.progress || 0,
     deadline: foundProject?.deadline || "TBD",
+    visibility: foundProject?.visibility || 'public',
     image: `https://picsum.photos/seed/${projectId}/200`,
     color: "#6D28D9",
     milestones: milestonesTemplate,
@@ -299,6 +302,13 @@ export default function ProjectDetail({
     }
   };
 
+  const toggleVisibility = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!foundProject || !onUpdateProject) return;
+    const newVisibility = foundProject.visibility === 'public' ? 'members' : 'public';
+    onUpdateProject({ ...foundProject, visibility: newVisibility });
+  };
+
 
   return (
     <div className="flex flex-col h-full bg-[#111827] text-white relative">
@@ -438,7 +448,20 @@ export default function ProjectDetail({
             </div>
             <div className="space-y-0.5 text-xs text-gray-400">
               <p className="truncate">部 门: {data.department}</p>
-              <p className="truncate">负责人: {data.manager}</p>
+              <div className="flex items-center gap-2 truncate">
+                <span>负责人: {data.manager}</span>
+                {isManager && (
+                  <button
+                    onClick={toggleVisibility}
+                    className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full hover:bg-white/20 transition-colors"
+                  >
+                    {data.visibility === 'public' ? <Eye size={10} className="text-[#8B5CF6]" /> : <EyeOff size={10} className="text-gray-400" />}
+                    <span className={`text-[9px] font-bold ${data.visibility === 'public' ? 'text-[#8B5CF6]' : 'text-gray-400'}`}>
+                      {data.visibility === 'public' ? '公开' : '受限'}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

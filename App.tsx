@@ -496,6 +496,7 @@ export default function App() {
                   progress: dbVersion.progress,
                   status: dbVersion.status,
                   role: dbVersion.role, // PERSIST PERMANENT LEAVE
+                  visibility: dbVersion.visibility || localProject.visibility,
                   manager: dbVersion.manager || localProject.manager, // Sync manager from DB
                   manager_id: dbVersion.manager_id || localProject.manager_id,
                   members: updatedMembers.length > 0 ? updatedMembers : localProject.members // 如果数据库没有成员，才使用硬编码的
@@ -813,29 +814,32 @@ export default function App() {
   };
 
   const handleUpdateProject = async (updatedProject: any) => {
-    if (isDemoMode) {
-      setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-      return;
-    }
-
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        title: updatedProject.title,
-        progress: updatedProject.progress,
-        status: updatedProject.status,
-        deadline: updatedProject.deadline,
-        description: updatedProject.description,
-        visibility: updatedProject.visibility
-      })
-      .eq('id', updatedProject.id);
-
-    if (error) {
-      console.error('Error updating project:', error);
-      return;
-    }
-
+    // Optimistic Update
+    const originalProjects = [...allProjects];
     setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+
+    if (isDemoMode) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          title: updatedProject.title,
+          progress: updatedProject.progress,
+          status: updatedProject.status,
+          deadline: updatedProject.deadline,
+          description: updatedProject.description,
+          visibility: updatedProject.visibility
+        })
+        .eq('id', updatedProject.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating project:', error);
+      // Rollback on error
+      setAllProjects(originalProjects);
+      alert('更新项目失败，请检查网络连接');
+    }
   };
 
   const handleCreateProject = async (newProjectData: any, selectedMembers: any[]) => {
@@ -1290,6 +1294,7 @@ export default function App() {
           onLeaveProject={handleLeaveProject}
           onRateMember={handleRateMember}
           onMarkComplete={handleMarkComplete}
+          onUpdateProject={handleUpdateProject}
           allRatings={allRatings}
           followedProjectIds={followedProjectIds}
           allProjects={allProjects}

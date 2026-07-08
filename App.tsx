@@ -99,11 +99,9 @@ const initialOrgData: Department = {
       id: 'product',
       name: '产品设计中心',
       enName: 'Product & Design',
-      count: '1人',
+      count: '4人',
       level: 1,
-      members: [
-        { id: 'kexin', name: "王可欣", role: "高级产品经理", title: "高级产品经理", dept: "产品设计中心", projectCount: 8, status: "online", tags: ['产品规划', '需求分析', '用户体验', '项目管理', '数据驱动'], avatar: "https://picsum.photos/seed/kexin/200", joinDays: 1240, projects: [] }
-      ],
+      members: [],
       children: [
         {
           id: 'design',
@@ -115,6 +113,16 @@ const initialOrgData: Department = {
             { id: 'm6', name: "张欣", role: "UI 设计师", title: "UI 设计师", dept: "UI 设计部", projectCount: 3, status: "online", tags: ['Figma', 'Sketch'], avatar: "https://picsum.photos/seed/zhangxin/100", joinDays: 700, projects: [] },
             { id: 'm7', name: "Kiki", role: "交互设计师", title: "交互设计师", dept: "UI 设计部", projectCount: 2, status: "busy", tags: ['UX', 'Protopie'], avatar: "https://picsum.photos/seed/kiki/100", joinDays: 500, projects: [] },
             { id: 'm8', name: "Leo", role: "视觉专家", title: "视觉专家", dept: "UI 设计部", projectCount: 4, status: "online", tags: ['C4D', 'Blender'], avatar: "https://picsum.photos/seed/leo/100", joinDays: 900, projects: [] }
+          ]
+        },
+        {
+          id: 'product-dept',
+          name: '产品',
+          enName: 'Product',
+          count: '1人',
+          level: 2,
+          members: [
+            { id: 'kexin', name: "王可欣", role: "高级产品经理", title: "高级产品经理", dept: "产品", projectCount: 8, status: "online", tags: ['产品规划', '需求分析', '用户体验', '项目管理', '数据驱动'], avatar: "https://picsum.photos/seed/kexin/200", joinDays: 1240, projects: [] }
           ]
         }
       ]
@@ -357,6 +365,8 @@ export default function App() {
 
   // Demo Mode detection
   const isDemoMode = useMemo(() => {
+    // If it's on GitHub pages, always force demo mode to prevent DB writes
+    if (window.location.hostname.includes('github.io')) return true;
     return new URLSearchParams(window.location.search).get('mode') === 'demo';
   }, []);
 
@@ -371,11 +381,29 @@ export default function App() {
   const [allProjects, setAllProjects] = useState<Project[]>(initialProjects);
   const [allRatings, setAllRatings] = useState<ProjectRating[]>([]);
   const [aiChatMessages, setAiChatMessages] = useState<AIMessage[]>(initialAIChatMessages);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
+  const [globalToast, setGlobalToast] = useState<{ message: string; type?: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setGlobalToast({ message, type });
+    setTimeout(() => setGlobalToast(null), 3000);
+  };
+
   const [user, setUser] = useState({
     name: "王可欣",
     id: "kexin", // Added ID
     title: "高级产品经理",
-    dept: "产品设计中心",
+    dept: "产品",
     avatar: "https://picsum.photos/seed/kexin/200",
     joinDays: 1240,
     tags: ['产品规划', '需求分析', '用户体验', '项目管理', '数据驱动'],
@@ -406,11 +434,29 @@ export default function App() {
         }]
         : filteredMembers;
 
-      return {
+      // 递归处理子节点
+      const updatedChildren = node.children?.map(child => updateUserInOrg(child));
+
+      // 重新计算该节点的总人数（直属成员 + 所有子节点的总人数）
+      const countMembers = (n: Department): number => {
+        let total = n.members.length;
+        if (n.children) {
+          n.children.forEach(child => { total += countMembers(child); });
+        }
+        return total;
+      };
+
+      const updatedNode: Department = {
         ...node,
         members: newMembers,
-        children: node.children?.map(child => updateUserInOrg(child))
+        children: updatedChildren,
       };
+
+      // 更新 count 字段
+      const totalCount = countMembers(updatedNode);
+      updatedNode.count = `${totalCount}人`;
+
+      return updatedNode;
     };
 
     setOrgData(prev => updateUserInOrg(prev));
@@ -670,10 +716,11 @@ export default function App() {
     });
   }, [allProjects, user.id, user.name]);
 
-  const latestFollowedProject = useMemo(() => {
-    if (followedProjectIds.length === 0) return null;
-    const latestId = followedProjectIds[followedProjectIds.length - 1];
-    return allProjects.find(p => p.id === latestId) || null;
+  const latestFollowedProjects = useMemo(() => {
+    if (followedProjectIds.length === 0) return [];
+    // Get the last two IDs (latest first)
+    const latestIds = followedProjectIds.slice(-2).reverse();
+    return latestIds.map(id => allProjects.find(p => p.id === id)).filter(Boolean) as Project[];
   }, [allProjects, followedProjectIds]);
 
   const handleRemindMember = async (projectId: string, projectTitle: string, milestoneTitle: string) => {
@@ -838,7 +885,7 @@ export default function App() {
       console.error('Error updating project:', error);
       // Rollback on error
       setAllProjects(originalProjects);
-      alert('更新项目失败，请检查网络连接');
+      showToast('更新项目失败，请检查网络连接', 'error');
     }
   };
 
@@ -997,7 +1044,7 @@ export default function App() {
         type: 'accept'
       }, ...prev]);
 
-      alert(`已接受项目：${project.title}`);
+      showToast(`已接受项目：${project.title}`);
     } catch (err) {
       console.error(err);
     }
@@ -1032,7 +1079,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Rating failed:', err);
-      alert('评分失败');
+      showToast('评分失败', 'error');
     }
   };
 
@@ -1045,6 +1092,20 @@ export default function App() {
     try {
       // 3. Insert Activity record in Supabase
       if (!isDemoMode) {
+        // 0. Ensure project exists in DB if it's a demo project
+        if (project && !project.created_at) {
+          await supabase.from('projects').upsert({
+            id: project.id,
+            title: project.title,
+            manager: project.manager || '未知',
+            manager_id: project.manager_id || 'unknown',
+            department: project.department || '未知',
+            progress: project.progress,
+            status: project.status,
+            deadline: project.deadline
+          });
+        }
+
         // 1. Insert Project Member (Wrap in demo check)
         const { error: memberError } = await supabase
           .from('project_members')
@@ -1155,42 +1216,48 @@ export default function App() {
   };
 
   const handleLeaveProject = async (projectId: string) => {
-    if (isDemoMode) {
-      updateLocalState(projectId);
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: '退出项目',
+      message: '确定要退出此项目吗？',
+      isDestructive: true,
+      onConfirm: async () => {
+        updateLocalState(projectId);
+        if (isDemoMode) return;
 
-    try {
-      // 0. Ensure project exists in DB if it's a demo project
-      const project = allProjects.find(p => (p.id || (p as any).projectId) === projectId);
-      if (project && !project.created_at) {
-        await supabase.from('projects').upsert({
-          id: project.id,
-          title: project.title,
-          manager: project.manager || '未知',
-          department: project.department || '未知',
-          progress: project.progress,
-          status: project.status,
-          deadline: project.deadline
-        });
+        try {
+          // 0. Ensure project exists in DB if it's a demo project
+          const project = allProjects.find(p => (p.id || (p as any).projectId) === projectId);
+          if (project && !project.created_at) {
+            await supabase.from('projects').upsert({
+              id: project.id,
+              title: project.title,
+              manager: project.manager || '未知',
+              department: project.department || '未知',
+              progress: project.progress,
+              status: project.status,
+              deadline: project.deadline
+            });
+          }
+
+          // 1. Remove from Supabase project_members
+          const { error } = await supabase
+            .from('project_members')
+            .delete()
+            .match({ project_id: projectId, member_id: user.id });
+
+          if (error) {
+            console.error('Error leaving project:', error);
+            showToast('退出失败', 'error');
+            return;
+          }
+
+          updateLocalState(projectId);
+        } catch (err) {
+          console.error('Leave project failed:', err);
+        }
       }
-
-      // 1. Remove from Supabase project_members
-      const { error } = await supabase
-        .from('project_members')
-        .delete()
-        .match({ project_id: projectId, member_id: user.id });
-
-      if (error) {
-        console.error('Error leaving project:', error);
-        alert('退出失败');
-        return;
-      }
-
-      updateLocalState(projectId);
-    } catch (err) {
-      console.error('Leave project failed:', err);
-    }
+    });
   };
 
   const updateLocalState = (pid: string) => {
@@ -1208,74 +1275,71 @@ export default function App() {
     setSelectedProjectId(null);
     setCurrentView('main');
 
-    alert('已成功退出项目');
+    showToast('已成功退出项目');
   };
 
   // Mark project as 100% complete and sync to database
   const handleMarkComplete = async (projectId: string) => {
-    if (!window.confirm('确定要标记此项目为已完成吗？此操作将把进度设为100%。')) return;
+    setConfirmModal({
+      isOpen: true,
+      title: '标记已完成',
+      message: '确定要标记此项目为已完成吗？此操作将把进度设为100%。',
+      onConfirm: async () => {
+        // Optimistic update
+        setAllProjects(prev => prev.map(p =>
+          p.id === projectId ? { ...p, progress: 100, status: 'done' } : p
+        ));
 
-    try {
-      // 1. Update progress to 100% in Supabase
-      if (!isDemoMode) {
-        const { error } = await supabase
-          .from('projects')
-          .update({ progress: 100, status: 'done' })
-          .eq('id', projectId);
+        try {
+          if (!isDemoMode) {
+            const { error } = await supabase
+              .from('projects')
+              .update({ progress: 100, status: 'done' })
+              .eq('id', projectId);
 
-        if (error) {
-          console.error('Error marking project complete:', error);
-          alert('标记失败，请重试');
-          return;
+            if (error) {
+              console.error('Error marking project complete:', error);
+              showToast('标记状态未能同步至服务器，请刷新重试', 'error');
+            } else {
+              showToast('项目已标记为完成');
+            }
+          } else {
+            showToast('项目已标记为完成');
+          }
+        } catch (err) {
+          console.error('Mark complete failed:', err);
         }
       }
-
-      // 2. Update local state
-      setAllProjects(prev => prev.map(p =>
-        p.id === projectId ? { ...p, progress: 100, status: 'done' } : p
-      ));
-
-      if (isDemoMode) {
-        console.log('Demo mode: project mark complete (local only)');
-      }
-      alert('项目已标记为完成！');
-    } catch (err) {
-      console.error('Mark complete failed:', err);
-      alert('操作失败');
-    }
+    });
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!window.confirm('确定要删除此项目吗？该操作不可撤销。')) return;
+    setConfirmModal({
+      isOpen: true,
+      title: '解散项目',
+      message: '确定要解散此项目吗？该操作不可撤销。',
+      isDestructive: true,
+      onConfirm: async () => {
+        // Optimistic update
+        setAllProjects(prev => prev.filter(p => (p.id || (p as any).projectId) !== projectId));
+        setProjectActivities(prev => prev.filter(act => act.projectId !== projectId));
+        setSelectedProjectId(null);
+        setCurrentView('main');
+        showToast('项目及相关动态已成功删除');
 
-    try {
-      // 1. Delete from Supabase
-      if (!isDemoMode) {
-        await supabase.from('activities').delete().eq('project_id', projectId);
-        await supabase.from('project_members').delete().eq('project_id', projectId);
-        const { error } = await supabase.from('projects').delete().eq('id', projectId);
-
-        if (error) {
-          console.error('Error deleting project:', error);
-          alert('删除失败，请重试');
-          return;
+        try {
+          if (!isDemoMode) {
+            supabase.from('activities').delete().eq('project_id', projectId).then();
+            supabase.from('project_members').delete().eq('project_id', projectId).then();
+            supabase.from('projects').delete().eq('id', projectId).then(({ error }) => {
+              if (error) console.error('Error deleting project:', error);
+            });
+          }
+        } catch (err) {
+          console.error('Delete project failed:', err);
         }
       }
-
-      // 2. Update local state
-      setAllProjects(prev => prev.filter(p => (p.id || (p as any).projectId) !== projectId));
-      setProjectActivities(prev => prev.filter(act => act.projectId !== projectId));
-      setSelectedProjectId(null);
-      setCurrentView('main');
-
-      if (isDemoMode) {
-        console.log('Demo mode: project deleted (local only)');
-      }
-      alert('项目及相关动态已成功删除');
-    } catch (err) {
-      console.error('Delete flow failed:', err);
-      alert('删除失败');
-    }
+    });
   };
 
   const renderContent = () => {
@@ -1353,7 +1417,7 @@ export default function App() {
             onNavigateToNotifications={navigateToNotifications}
             activities={projectActivities}
             urgentTasks={urgentTasks}
-            latestFollowedProject={latestFollowedProject}
+            latestFollowedProjects={latestFollowedProjects}
             onAcceptProject={handleAcceptProject}
             allProjects={allProjects}
           />
@@ -1419,7 +1483,7 @@ export default function App() {
             onNavigateToNotifications={navigateToNotifications}
             activities={projectActivities}
             urgentTasks={urgentTasks}
-            latestFollowedProject={latestFollowedProject}
+            latestFollowedProjects={latestFollowedProjects}
             onAcceptProject={handleAcceptProject}
             allProjects={allProjects}
           />
@@ -1428,16 +1492,57 @@ export default function App() {
   };
 
   return (
-    <Layout
-      currentTab={currentTab}
-      onTabChange={(tab) => {
-        setCurrentTab(tab);
-        setCurrentView('main');
-      }}
-      hideBottomNav={currentView !== 'main' && currentTab !== Tab.AI}
-      isDemoMode={isDemoMode}
-    >
-      {renderContent()}
-    </Layout>
+    <>
+      <Layout
+        currentTab={currentTab}
+        onTabChange={(tab) => {
+          setCurrentTab(tab);
+          setCurrentView('main');
+        }}
+        hideBottomNav={currentView !== 'main' && currentTab !== Tab.AI}
+        isDemoMode={isDemoMode}
+      >
+        {renderContent()}
+      </Layout>
+
+      {/* Global Modals & Toasts */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white text-slate-900 w-full max-w-sm rounded-2xl p-6 animate-fade-in-up">
+            <h3 className="font-bold text-lg mb-2">{confirmModal.title}</h3>
+            <p className="text-gray-600 text-sm mb-6">{confirmModal.message}</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 rounded-xl text-gray-500 font-bold hover:bg-gray-100 transition-colors"
+              >
+                {confirmModal.cancelText || '取消'}
+              </button>
+              <button
+                onClick={() => {
+                  confirmModal.onConfirm();
+                  setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }}
+                className={`px-4 py-2 rounded-xl font-bold text-white transition-colors ${confirmModal.isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-[#2C097F] hover:bg-[#3f19a3]'}`}
+              >
+                {confirmModal.confirmText || '确定'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {globalToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[300] animate-fade-in-down">
+          <div className={`px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 backdrop-blur-md border ${
+            globalToast.type === 'error' ? 'bg-red-500/90 text-white border-red-400' :
+            globalToast.type === 'info' ? 'bg-blue-500/90 text-white border-blue-400' :
+            'bg-[#2C097F]/90 text-white border-[#2C097F]/40'
+          }`}>
+            <span className="font-bold text-sm">{globalToast.message}</span>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

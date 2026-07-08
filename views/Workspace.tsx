@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Bell, ChevronRight, Plus, AlertCircle, CalendarClock, Activity, ClipboardList, PenTool, Layout, Clock, Rocket, MessageSquare, CheckCircle2, UserPlus, FileText, Bot, X } from 'lucide-react';
+import { Bell, ChevronRight, Plus, AlertCircle, CalendarClock, Activity, ClipboardList, PenTool, Layout, Clock, Rocket, MessageSquare, CheckCircle2, UserPlus, FileText, Bot, X, ShieldAlert } from 'lucide-react';
 import { ProjectActivity, Project } from '../types';
 
 interface WorkspaceProps {
@@ -16,15 +16,26 @@ interface WorkspaceProps {
   onNavigateToNotifications: () => void;
   activities: ProjectActivity[];
   urgentTasks: Project[];
-  latestFollowedProject: Project | null;
+  latestFollowedProjects: Project[];
   onAcceptProject: (projectId: string) => void;
   allProjects: Project[];
 }
 
-export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject, onNavigateToCreate, onNavigateToNotifications, activities, urgentTasks, latestFollowedProject, onAcceptProject, allProjects }) => {
+export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject, onNavigateToCreate, onNavigateToNotifications, activities, urgentTasks, latestFollowedProjects, onAcceptProject, allProjects }) => {
   const [activeTab, setActiveTab] = useState<'urgent' | 'updates'>('urgent');
   const [showStatModal, setShowStatModal] = useState(false);
   const [selectedStatType, setSelectedStatType] = useState<'ongoing' | 'todos' | 'delayed' | null>(null);
+
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastIcon, setToastIcon] = useState<React.ReactNode>(null);
+
+  const showNotification = (msg: string, icon: React.ReactNode) => {
+    setToastMessage(msg);
+    setToastIcon(icon);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
 
   // Filter projects by user participation (manager or participant)
   const userProjects = useMemo(() => {
@@ -66,12 +77,16 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
   const handleNavigateWithPermission = (projectId: string) => {
     const project = allProjects.find(p => p.id === projectId);
     if (project) {
-      // Check if locked and user has no permission
-      const isUserMemberOrManager = project.manager === user.name || project.role === 'participant' || project.role === 'manager';
-      const isLocked = project.status === 'locked' || (project.visibility === 'members' && !isUserMemberOrManager);
+      // Unified Access Logic
+      const isManager = project.manager === "王可欣" || project.manager_id === 'kexin';
+      const isMember = project.members?.some((m: any) => m.id === 'kexin' || m.name === '王可欣');
+      const isParticipant = project.role === 'participant' || project.role === 'manager';
+      
+      const hasAccess = isManager || isMember || isParticipant || project.visibility === 'public';
+      const isLocked = !hasAccess && project.visibility === 'members';
 
-      if (isLocked && !isUserMemberOrManager) {
-        alert('您没有访问此项目的权限');
+      if (isLocked) {
+        showNotification('无权限访问此项目', <ShieldAlert size={18} className="text-white" />);
         return;
       }
     }
@@ -84,22 +99,32 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F6F6F8]">
-      {/* Short Purple Header - Compressed for density */}
-      <div className="bg-[#2C097F] text-white pt-10 pb-3 px-4 shadow-md relative z-10">
+    <div className="flex flex-col min-h-screen bg-[#F6F6F8] relative">
+      {/* Toast Popup */}
+      {showToast && (
+        <div className="fixed top-32 left-1/2 -translate-x-1/2 w-[90%] bg-slate-900/95 backdrop-blur text-white px-4 py-3.5 rounded-2xl shadow-2xl z-[300] flex items-center gap-3 animate-fade-in-down transition-all duration-300">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${toastMessage.includes('无权限') ? 'bg-red-500' : 'bg-[#2C097F]'}`}>
+            {toastIcon}
+          </div>
+          <div>
+            <p className="font-bold text-sm">{toastMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Frosted Glass Purple Header */}
+      <div className="sticky top-0 z-50 bg-gradient-to-br from-[#2C097F]/85 to-[#2C097F]/60 backdrop-blur-[32px] backdrop-saturate-[150%] text-white pt-10 pb-3 px-4 shadow-[0_8px_32px_0_rgba(44,9,127,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border-b border-white/20">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-3">
+            <div className="relative shrink-0">
               <img src={user.avatar} alt="Avatar" className="w-10 h-10 rounded-full border-2 border-white/30 object-cover" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold leading-tight">早安，{user.name}</h1>
-              <p className="text-[10px] text-white/70 font-medium leading-tight">{user.dept} · {user.title}</p>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-lg font-bold leading-none">早安，{user.name}</h1>
+              <p className="text-[10px] text-white/70 font-medium leading-none">{user.dept} · {user.title}</p>
             </div>
           </div>
-          <button onClick={onNavigateToNotifications} className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
-            <Bell size={18} />
-          </button>
+
         </div>
       </div>
 
@@ -142,7 +167,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
                   <X size={18} />
                 </button>
               </div>
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto no-scrollbar">
                 {getStatProjects().length > 0 ? getStatProjects().map((project: Project) => (
                   <div
                     key={project.id}
@@ -238,42 +263,46 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onNavigateToProject,
         <div>
           <h3 className="text-[10px] font-bold text-gray-400 mb-2 pl-1 uppercase tracking-tight">最新关注项目</h3>
 
-          {latestFollowedProject ? (
-            <div onClick={() => handleNavigateWithPermission(latestFollowedProject.id)} className="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-blue-200">
-                    {latestFollowedProject.title.charAt(0)}
+          {latestFollowedProjects.length > 0 ? (
+            <div className="space-y-3">
+              {latestFollowedProjects.map(project => (
+                <div key={project.id} onClick={() => handleNavigateWithPermission(project.id)} className="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-blue-200">
+                        {project.title.charAt(0)}
+                      </div>
+                      <h4 className="font-bold text-gray-900 text-sm">{project.title}</h4>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[#2C097F]/10 text-[#2C097F] text-[10px] font-bold rounded-lg border border-[#2C097F]/10">
+                      {project.status === 'ongoing' ? '进行中' : (project.status === 'delayed' ? '延期' : '正常')}
+                    </span>
                   </div>
-                  <h4 className="font-bold text-gray-900 text-sm">{latestFollowedProject.title}</h4>
+
+                  <div className="flex justify-between text-[10px] text-gray-500 mb-1.5 font-medium">
+                    <span>总体进度</span>
+                    <span className="text-gray-900 font-bold">{project.progress}%</span>
+                  </div>
+
+                  {/* Custom Progress Bar */}
+                  <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3 overflow-hidden">
+                    <div className="bg-[#2C097F] h-1.5 rounded-full" style={{ width: `${project.progress}%` }}></div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2.5 border-t border-gray-50">
+                    <img src={`https://picsum.photos/seed/${project.manager}/50`} className="w-5 h-5 rounded-full border border-gray-100 object-cover" alt="" />
+                    <div className="flex items-center gap-1.5 text-[10px]">
+                      <span className="text-gray-500 font-medium">{project.manager}</span>
+                      <span className="text-gray-300">•</span>
+                      <span className="text-gray-400">刚刚更新</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 bg-[#2C097F]/10 text-[#2C097F] text-[10px] font-bold rounded-lg border border-[#2C097F]/10">
-                  {latestFollowedProject.status === 'ongoing' ? '进行中' : (latestFollowedProject.status === 'delayed' ? '延期' : '正常')}
-                </span>
-              </div>
-
-              <div className="flex justify-between text-[10px] text-gray-500 mb-1.5 font-medium">
-                <span>总体进度</span>
-                <span className="text-gray-900 font-bold">{latestFollowedProject.progress}%</span>
-              </div>
-
-              {/* Custom Progress Bar */}
-              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3 overflow-hidden">
-                <div className="bg-[#2C097F] h-1.5 rounded-full" style={{ width: `${latestFollowedProject.progress}%` }}></div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2.5 border-t border-gray-50">
-                <img src={`https://picsum.photos/seed/${latestFollowedProject.manager}/50`} className="w-5 h-5 rounded-full border border-gray-100 object-cover" alt="" />
-                <div className="flex items-center gap-1.5 text-[10px]">
-                  <span className="text-gray-500 font-medium">{latestFollowedProject.manager}</span>
-                  <span className="text-gray-300">•</span>
-                  <span className="text-gray-400">刚刚更新</span>
-                </div>
-              </div>
+              ))}
             </div>
           ) : (
             <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 text-center text-gray-400">
-              去项目中通过关注一个项目吧
+              <span className="text-xs italic block">暂无关注项目</span>
             </div>
           )}
         </div>

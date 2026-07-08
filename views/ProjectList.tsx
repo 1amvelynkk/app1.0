@@ -89,7 +89,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     // Other specific filters
     if (activeFilter === 'followed') return followedProjects.has(p.id);
     if (activeFilter === 'my') return isMyProject;
-    if (activeFilter === 'participated') return isParticipant;
+    if (activeFilter === 'participated') return isParticipant && !isMyProject;
 
     return true;
   });
@@ -98,7 +98,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     <div className="flex flex-col h-full bg-[#F6F6F8] relative">
       {/* Toast Popup */}
       {showToast && (
-        <div className="absolute top-32 left-1/2 -translate-x-1/2 w-[90%] bg-slate-900/95 backdrop-blur text-white px-4 py-3.5 rounded-2xl shadow-2xl z-[100] flex items-center gap-3 animate-fade-in-down transition-all duration-300">
+        <div className="fixed top-32 left-1/2 -translate-x-1/2 w-[90%] bg-slate-900/95 backdrop-blur text-white px-4 py-3.5 rounded-2xl shadow-2xl z-[100] flex items-center gap-3 animate-fade-in-down transition-all duration-300">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${toastMessage.includes('无权限') ? 'bg-red-500' : 'bg-[#2C097F]'}`}>
             {toastIcon}
           </div>
@@ -140,9 +140,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       </div>
 
       {/* Filters - Compressed */}
-      <div className="px-4 flex items-center gap-3 mb-3">
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">筛选</span>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+      <div className="px-4 mb-3">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 px-1 -mx-1">
           <FilterButton label="进行中" active={activeFilter === 'all'} onClick={() => { setActiveFilter('all'); onFilterChange?.('all'); }} />
           <FilterButton label="已完成" active={activeFilter === 'completed'} onClick={() => { setActiveFilter('completed'); onFilterChange?.('completed'); }} completed />
           <FilterButton label="我负责的" active={activeFilter === 'my'} onClick={() => { setActiveFilter('my'); onFilterChange?.('my'); }} />
@@ -152,7 +151,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       </div>
 
       {/* Active Projects List - Compressed */}
-      <div className="px-3 pb-32 flex-1 overflow-y-auto">
+      <div className="px-3 pb-32 flex-1 overflow-y-auto no-scrollbar">
         <div className="flex justify-between items-center mb-2.5">
           <h2 className="text-sm font-bold text-slate-900">
             {activeFilter === 'followed' ? '我的关注' : activeFilter === 'participated' ? '我参与的项目' : activeFilter === 'my' ? '我负责的项目' : '活跃项目'}
@@ -210,7 +209,7 @@ const FilterButton = ({ label, active, onClick, completed }: { label: string, ac
   <button
     onClick={onClick}
     className={`h-8 px-3.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-all ${active
-      ? 'bg-[#2C097F] text-white shadow-lg shadow-[#2C097F]/20 scale-105'
+      ? 'bg-[#2C097F] text-white scale-105'
       : 'bg-white border border-slate-200 text-slate-600'
       }`}
   >
